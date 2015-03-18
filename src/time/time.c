@@ -76,7 +76,7 @@ const struct month_data month_info[NUM_MONTHS] = {
   { "June",                       30,        6,         12,        19,     22 },
   { "July",                       30,        5,         12,        19,     22 },
   { "August",                     30,        5,         12,        20,     23 },
-  { "September"                   30,        6,         12,        19,     22 },
+  { "September",                  30,        6,         12,        19,     22 },
   { "October",                    30,        6,         12,        18,     21 },
   { "November",                   30,        7,         12,        17,     20 },
   { "December",                   30,        8,         12,        16,     18 }
