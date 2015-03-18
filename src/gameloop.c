@@ -92,8 +92,6 @@ PROPERTY_TABLE *sock_table = NULL; // a table of socks by UID, for quick lookup
 BUFFER           *greeting = NULL; // message seen when a socket connects
 BUFFER               *motd = NULL; // what characters see when they log on
 
-mt_state* rng;                     // The global Mersenne Twister PRNG
-
 //
 // This is where it all starts, nothing special.
 int main(int argc, char **argv)
