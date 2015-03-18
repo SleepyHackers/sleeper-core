@@ -27,7 +27,6 @@
 #include "hooks.h"
 #include "mtwist.h"
 
-
 //*****************************************************************************
 // mandatory modules
 //*****************************************************************************
@@ -130,7 +129,7 @@ int main(int argc, char **argv)
   }
 
   /* seed the random number generator */
-  mts_bestseed(rng);
+  mt_bestseed();
 
   /* get the current time */
   current_time = time(NULL);

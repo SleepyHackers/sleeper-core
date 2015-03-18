@@ -33,15 +33,13 @@
 #include "event.h"
 #include "action.h"
 #include "hooks.h"
-
-
+#include "sleeper.h"
+#include "randistrs.h"
 
 //*****************************************************************************
 // mandatory modules
 //*****************************************************************************
 #include "items/items.h"
-
-
 
 //*****************************************************************************
 // implementation of utils.h
