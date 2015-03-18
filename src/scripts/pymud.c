@@ -11,8 +11,8 @@
 //
 //*****************************************************************************
 
-#include <Python.h>
-#include <structmember.h>
+#include <python2.7/Python.h>
+#include <python2.7/structmember.h>
 
 #include "../mud.h"
 #include "../utils.h"

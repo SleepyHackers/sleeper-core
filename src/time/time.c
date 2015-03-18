@@ -6,7 +6,7 @@
 //
 //*****************************************************************************
 
-#include <Python.h>        // to add Python hooks
+#include <python2.7/Python.h>        // to add Python hooks
 
 #include "../mud.h"
 #include "../utils.h"

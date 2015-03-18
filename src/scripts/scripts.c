@@ -47,8 +47,8 @@
 #include "script_editor.h"
 
 // Python stuff
-#include <compile.h>
-#include <eval.h>
+#include <python2.7/compile.h>
+#include <python2.7/eval.h>
 
 
 

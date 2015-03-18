@@ -22,8 +22,8 @@
 #ifdef _POSIX_C_SOURCE
 #undef _POSIX_C_SOURCE
 #endif
-#include <Python.h>
-#include <structmember.h>
+#include <python2.7/Python.h>
+#include <python2.7/structmember.h>
 
 //
 // this is also needed by anything that touches scripts
