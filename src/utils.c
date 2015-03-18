@@ -1079,16 +1079,6 @@ int fgetline(FILE *file, char *p, int maxlen)
   return count;
 }
 
-int rand_number(int min, int max) {
-  if(min > max) {
-    log_string("ERROR: rand_number passed a min (%d) higher than its max (%d).",
-	       min, max);
-    return 0;
-  }
-
-  return min + rand() % (max-min + 1);
-}
-
 double rand_percent(void) {
   double rnd = rand_number(0, RAND_MAX);
   return rnd / (double)RAND_MAX;
