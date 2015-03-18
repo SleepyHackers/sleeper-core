@@ -9,11 +9,11 @@
 //
 //*****************************************************************************
 
-#include <Python.h>
-#include <structmember.h>
-#include <compile.h>
+#include <python2.7/Python.h>
+#include <python2.7/structmember.h>
+#include <python2.7/compile.h>
 #include <dirent.h> 
-#include <node.h>
+#include <python2.7/node.h>
 
 #include "../mud.h"
 #include "../utils.h"
