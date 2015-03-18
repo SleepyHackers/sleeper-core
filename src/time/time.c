@@ -46,8 +46,8 @@
 #define TIME_FILE   "../lib/misc/time"  // where do we keep time data?
 #define TIME_UPDATE_DELAY   1 MUD_HOUR  // how long is an in-game hour?
 #define HOURS_PER_DAY               24  // how many hours are in a day?
-#define NUM_MONTHS                   4  // how many months are in a year?
-#define DAYS_PER_WEEK                3  // how many days are in a week?
+#define NUM_MONTHS                  12  // how many months are in a year?
+#define DAYS_PER_WEEK                7  // how many days are in a week?
 #define USE_AMPM                  TRUE  // do we use the am/pm system?
 
 COMMAND(cmd_time);                      // a player command for seeing the time
@@ -68,16 +68,28 @@ struct day_data {
 
 const struct month_data month_info[NUM_MONTHS] = {
   // month name                 days   morning   afternoon    evening   night
-  { "the month of dawn",          30,        6,         12,        18,     22 },
-  { "the month of light",         30,        4,         10,        19,     23 },
-  { "the month of the moon",      30,        6,         12,        17,     21 },
-  { "the month of twilight",      30,        5,         13,        16,     20 },
+  { "January",                    30,        7,         12,        17,     19 },
+  { "February",                   30,        7,         12,        17,     20 },
+  { "March",                      30,        7,         12,        18,     21 },
+  { "April",                      30,        6,         12,        18,     22 },
+  { "May",                        30,        6,         12,        18,     22 },
+  { "June",                       30,        6,         12,        19,     22 },
+  { "July",                       30,        5,         12,        19,     22 },
+  { "August",                     30,        5,         12,        20,     23 },
+  { "September"                   30,        6,         12,        19,     22 },
+  { "October",                    30,        6,         12,        18,     21 },
+  { "November",                   30,        7,         12,        17,     20 },
+  { "December",                   30,        8,         12,        16,     18 }
 };
 
 const struct day_data day_info[DAYS_PER_WEEK] = {
-  { "the day of work" },
-  { "the day of play" },
-  { "the day of rest" },
+  { "Sunday" },
+  { "Monday" },
+  { "Tuesday" },
+  { "Wednesday" },
+  { "Thursday" },
+  { "Friday" },
+  { "Saturday" }
 };
 
 
