@@ -33,7 +33,6 @@
 #include "event.h"
 #include "action.h"
 #include "hooks.h"
-#include "sleeper.h"
 #include "randistrs.h"
 
 //*****************************************************************************

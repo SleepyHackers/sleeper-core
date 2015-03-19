@@ -23,7 +23,6 @@
 #include "prototype.h"
 #include "hooks.h"
 #include "room_reset.h"
-#include "sleeper.h"
 #include "randistrs.h"
 
 //*****************************************************************************

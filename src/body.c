@@ -10,7 +10,6 @@
 #include "mud.h"
 #include "utils.h"
 #include "body.h"
-#include "sleeper.h"
 
 struct bodypart_data {
   char          *name;       // the name of the position
