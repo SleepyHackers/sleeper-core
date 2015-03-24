@@ -25,8 +25,7 @@
 #include "races.h"
 #include "inform.h"
 #include "hooks.h"
-
-
+#include "mtwist.h"
 
 //*****************************************************************************
 // mandatory modules
@@ -93,8 +92,6 @@ PROPERTY_TABLE *sock_table = NULL; // a table of socks by UID, for quick lookup
 BUFFER           *greeting = NULL; // message seen when a socket connects
 BUFFER               *motd = NULL; // what characters see when they log on
 
-
-
 //
 // This is where it all starts, nothing special.
 int main(int argc, char **argv)
@@ -130,7 +127,7 @@ int main(int argc, char **argv)
   }
 
   /* seed the random number generator */
-  srand(time(0));
+  mt_bestseed();
 
   /* get the current time */
   current_time = time(NULL);

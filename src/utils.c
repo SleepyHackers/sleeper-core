@@ -33,15 +33,12 @@
 #include "event.h"
 #include "action.h"
 #include "hooks.h"
-
-
+#include "randistrs.h"
 
 //*****************************************************************************
 // mandatory modules
 //*****************************************************************************
 #include "items/items.h"
-
-
 
 //*****************************************************************************
 // implementation of utils.h
@@ -1077,16 +1074,6 @@ int fgetline(FILE *file, char *p, int maxlen)
 
   p[count] = '\0';
   return count;
-}
-
-int rand_number(int min, int max) {
-  if(min > max) {
-    log_string("ERROR: rand_number passed a min (%d) higher than its max (%d).",
-	       min, max);
-    return 0;
-  }
-
-  return min + rand() % (max-min + 1);
 }
 
 double rand_percent(void) {

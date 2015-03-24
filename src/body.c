@@ -11,7 +11,6 @@
 #include "utils.h"
 #include "body.h"
 
-
 struct bodypart_data {
   char          *name;       // the name of the position
   int            type;       // what kind of position type is this?
