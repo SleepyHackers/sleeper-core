@@ -3,3 +3,5 @@
 *~
 *.pyc
 NakedMud
+lib/misc/time
+lib/muddata
