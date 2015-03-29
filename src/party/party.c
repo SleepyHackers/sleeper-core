@@ -5,10 +5,10 @@
 
 #include "party.h"
 
-CHAR_DATA *leader = NULL;
+//CHAR_DATA *leader = NULL;
 
 COMMAND(cmd_follow) {
-  leader = CHAR_DATA *find_char(ch, LIST *list, int num, const char *name,
+  //leader = CHAR_DATA *find_char(ch, LIST *list, int num, const char *name,
 				const char *prototype, bool must_see);
   send_to_char(ch, "Hello, world!\r\n");
 
