@@ -261,6 +261,13 @@ int main(int argc, char **argv)
 #endif
 
 
+  /*
+   * BEGIN: SleeperMUD modules
+   */
+#ifdef MODULE_PARTY
+  log_string("Initializing party system");
+  init_party();
+#endif
 
   /**********************************************************************/
   /*                   SET UP ALL OF OUR PYTHON STUFF                   */

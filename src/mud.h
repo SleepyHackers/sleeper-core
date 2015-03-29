@@ -33,6 +33,10 @@
 #define MODULE_HELP2
 #define MODULE_TIME
 
+/* 
+ * SleeperMUD modules
+ */
+#define MODULE_PARTY
 
 
 //*****************************************************************************

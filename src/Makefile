@@ -26,7 +26,7 @@ COLOR   := \x1B[36m
 NOCOLOR := \x1B[0m
 
 # the modules we have installed -- mandatory modules go here
-MODULES := dyn_vars set_val olc2 editor items scripts
+MODULES := dyn_vars set_val olc2 editor items scripts party
 
 # optional modules go on this line
 MODULES += time socials alias help2
