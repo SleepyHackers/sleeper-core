@@ -32,7 +32,7 @@ MODULES := dyn_vars set_val olc2 editor items scripts party
 MODULES += time socials alias help2
 
 # flags to use during compilation
-C_FLAGS := -Wall -g -ggdb -O2
+C_FLAGS := -Wall -g -ggdb 
 
 # extra libraries if required
 LIBS    := -lz -lpthread -lcrypt
