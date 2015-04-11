@@ -8,9 +8,6 @@
 
 LIST *leaders = NULL;
 
-/* Our cstring buffers */
-char buffy[MAX_BUFFER];
-char buffy1[MAX_BUFFER];
 
 /* Creates a new leader, with a first follower */
 LEADER_DATA *newLeader(CHAR_DATA *cdLeader, CHAR_DATA *cdFollower) {
@@ -34,12 +31,31 @@ void deleteLeader(LEADER_DATA *ldLeader) {
 }
 
 /* Hook to run on "enter", allows following of NPCs and PCs */
-void doFollow(CHAR_DATA *arg1, ROOM_DATA *arg2) {
-  send_to_char(arg1, "test");
+void doFollow(char *arg) {
+  char buffy[MAX_BUFFER];
+  char buffy1[MAX_BUFFER];
 
+  arg = two_args(arg, buffy, buffy1);
+
+  LIST_ITERATOR *i = newListIterator(leaders);
+  LEADER_DATA *ldTmp = NULL;
+  CHAR_DATA *cdTmp = NULL;
+ 
+  /* Find our target Char */
+
+  ITERATE_LIST(ldTmp, i) {
+    send_to_char(ldTmp->leader, "%i\r\n", charGetUID(ldTmp->leader));
+    if(ldTmp->leader == cdTmp) {
+      send_to_char(ldTmp->leader, "Blah, follows you\r\n");
+    }
+  } deleteListIterator(i);
 }
 
 COMMAND(cmd_follow) {
+  /* Our cstring buffers */
+  char buffy[MAX_BUFFER];
+  char buffy1[MAX_BUFFER];
+
   CHAR_DATA *cdTmp = NULL; /* Temp pointer for leader */
 
   arg = one_arg(arg, buffy);  /* Get the first arg */  
@@ -60,9 +76,23 @@ COMMAND(cmd_follow) {
 
    } else { /* All clear, follow the leader now if possible */
 
-    send_to_char(ch, "Now following %s.\r\n", charGetName(cdTmp));
+    LIST_ITERATOR *i = newListIterator(leaders);
+    LEADER_DATA *ldTmp = NULL;
+    bool bFound = FALSE;
     
-
+    ITERATE_LIST(ldTmp, i) {
+      if(ldTmp->leader == cdTmp) {
+	listPut(ldTmp->followers, ch);
+	bFound = TRUE;
+	send_to_char(ch, "Now following %s.\r\n", charGetName(cdTmp));
+	break;
+      }
+    } deleteListIterator(i);
+   
+    if(bFound == FALSE) {
+      listPut(leaders, newLeader(cdTmp, ch));
+      send_to_char(ch, "Now following %s.\r\n", charGetName(cdTmp));
+    }
     
   }
 
