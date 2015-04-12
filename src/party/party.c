@@ -1,13 +1,28 @@
 #include <python2.7/Python.h>        // to add Python hooks
 
 #include "../mud.h"
+#include "../utils.h"
+#include "../hashtable.h"
 #include "../room.h"
+#include "../exit.h"
 #include "../character.h"
 #include "../list.h"
 
 #include "party.h"
 
 LIST *leaders = NULL, *followers;
+
+
+typedef struct {
+  CHAR_DATA *leader;
+  LIST *followers;
+} LEADER_DATA;
+
+typedef struct {
+  CHAR_DATA *follower;
+  CHAR_DATA *leader;
+} FOLLOWER_DATA;
+
 
 /* leader comparator for list* functions */
 int leaderFind(const CHAR_DATA *cmpto, const LEADER_DATA *cur) {
@@ -68,9 +83,7 @@ void doFollow(char *info) {
 
   LEADER_DATA *ldTmp = NULL;
   CHAR_DATA *cdTmp = NULL, *cdTarget = NULL;
-  ROOM_DATA *rdTmp = NULL;
-  ROOM_DATA *rdCur = NULL;
-
+  ROOM_DATA *rdTmp = NULL, *rdCur = NULL;
 
   hookParseInfo(info, &cdTarget, &rdTmp);
  
