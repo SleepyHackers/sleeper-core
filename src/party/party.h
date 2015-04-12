@@ -8,5 +8,10 @@ typedef struct {
   LIST *followers;
 } LEADER_DATA;
 
+typedef struct {
+  CHAR_DATA *follower;
+  CHAR_DATA *leader;
+} FOLLOWER_DATA;
+
 #endif
 
