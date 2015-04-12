@@ -7,6 +7,7 @@
 #include "../exit.h"
 #include "../character.h"
 #include "../list.h"
+#include "../hooks.h"
 
 #include "party.h"
 
@@ -31,7 +32,7 @@ int leaderFind(const CHAR_DATA *cmpto, const LEADER_DATA *cur) {
 
 /* follower comparator for list* functions */
 int followerListFind(const CHAR_DATA *cmpto, const LEADER_DATA *cur) {
-  return cur != cmpto;
+  return (CHAR_DATA*)cur != (CHAR_DATA*)cmpto;
 }
 
 int followerFind(const CHAR_DATA *cmpto, const FOLLOWER_DATA *cur) {
@@ -78,11 +79,8 @@ void deleteFollower(FOLLOWER_DATA *ldFollower) {
 
 /* Hook to run on "enter", allows following of NPCs and PCs */
 void doFollow(char *info) {
-  char buffy[MAX_BUFFER];
-  char buffy1[MAX_BUFFER];
-
   LEADER_DATA *ldTmp = NULL;
-  CHAR_DATA *cdTmp = NULL, *cdTarget = NULL;
+  CHAR_DATA *cdTarget = NULL;
   ROOM_DATA *rdTmp = NULL, *rdCur = NULL;
 
   hookParseInfo(info, &cdTarget, &rdTmp);
@@ -153,14 +151,13 @@ void startFollow(CHAR_DATA *ch, char *arg) {
        }
      }
    } else {
-     send_to_char(ch, "Already following someone.\r\n", charGetName(fdTmp->leader));
+     send_to_char(ch, "Already following someone.\r\n");
    }
 }
 
 /* Removes char from the follower/leader lists */
 void stopFollow(CHAR_DATA *ch) {
   /* Find our leader */
-  CHAR_DATA *cdTmp = NULL, *cdTmp1 = NULL;
   FOLLOWER_DATA *fdTmp = NULL;
   LEADER_DATA *ldTmp = NULL;
 
@@ -199,7 +196,6 @@ void stopFollow(CHAR_DATA *ch) {
 COMMAND(cmd_follow) {
   /* Our cstring buffers */
   char buffy[MAX_BUFFER];
-  char buffy1[MAX_BUFFER];
 
   /* Test for no args */
   if(compares(arg, "")) {
@@ -214,7 +210,7 @@ COMMAND(cmd_follow) {
 /* Init us in the mainloop */
 void init_party(void) {
   add_cmd("follow", NULL, cmd_follow, "player", FALSE); /* Add the follow command */
-  hookAdd("enter", doFollow);                           /* Add the follow hook to "enter" */
+  hookAdd("enter", (void*)doFollow);                           /* Add the follow hook to "enter" */
   leaders = newList();                                  /* Init our list of leaders */
   followers = newList();                                /* Ini tour list of followers */
 }
