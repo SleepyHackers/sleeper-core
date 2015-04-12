@@ -65,7 +65,7 @@ modules = ['dyn_vars', 'set_val', 'olc2', 'editor', 'items', 'scripts']
 modules += ['time', 'socials', 'alias', 'help2']
 
 # Compiler flags
-nakedmud.Append(CCFLAGS=['-Wall', '-g', '-ggdb', '-O2'])
+nakedmud.Append(CCFLAGS=['-Wall', '-g', '-ggdb'])
 
 # Required libraries
 nakedmud.Append(LIBS=['z', 'pthread'])
