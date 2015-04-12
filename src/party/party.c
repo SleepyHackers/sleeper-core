@@ -186,6 +186,7 @@ COMMAND(cmd_follow) {
 
 }
 
+/* Init us in the mainloop */
 void init_party(void) {
   add_cmd("follow", NULL, cmd_follow, "player", FALSE); /* Add the follow command */
   hookAdd("enter", doFollow);                           /* Add the follow hook to "enter" */
