@@ -77,29 +77,29 @@ void deleteFollower(FOLLOWER_DATA *ldFollower) {
 }
 
 
-/* Hook to run on "enter", allows following of NPCs and PCs */
+/* Hook to run on "exit", allows following of NPCs and PCs */
 void doFollow(char *info) {
   LEADER_DATA *ldTmp = NULL;
-  CHAR_DATA *cdTarget = NULL;
+  CHAR_DATA *cdTarget = NULL, *cdTmp = NULL;
   ROOM_DATA *rdTmp = NULL, *rdCur = NULL;
+  EXIT_DATA *edTmp;
 
-  hookParseInfo(info, &cdTarget, &rdTmp);
+  hookParseInfo(info, &cdTarget, &rdTmp, &edTmp);
  
   /* Find our target Char */
   ldTmp = listGetWith(leaders, cdTarget, leaderFind);
 
+  /* Target is in the leader list */
   if(ldTmp != NULL) {
-    const char *cDir = NULL;
-    EXIT_DATA *edTmp = NULL;
     rdCur = charGetRoom(cdTarget);
 
-    HASH_ITERATOR *hiI = newHashIterator(rdCur->exits);
-    ITERATE_HASH(cDir, edTmp, hiI) {
-      if(exitGetRoom(edTmp) == rdTmp) {
-	send_to_char(cdTarget, "match found\r\n");
-      }
-    } deleteHashIterator(hiI);
+    LIST_ITERATOR *cdI = newListIterator(ldTmp->followers);
 
+    ITERATE_LIST(cdTmp, cdI) {
+      if(charGetRoom(cdTmp) == rdCur && can_see_exit(cdTmp, edTmp)) {
+	
+      }
+    } deleteListIterator(cdI);
   }
 }
 
@@ -210,7 +210,7 @@ COMMAND(cmd_follow) {
 /* Init us in the mainloop */
 void init_party(void) {
   add_cmd("follow", NULL, cmd_follow, "player", FALSE); /* Add the follow command */
-  hookAdd("enter", (void*)doFollow);                           /* Add the follow hook to "enter" */
+  hookAdd("exit", (void*)doFollow);                           /* Add the follow hook to "exit" */
   leaders = newList();                                  /* Init our list of leaders */
   followers = newList();                                /* Ini tour list of followers */
 }
