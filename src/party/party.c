@@ -90,9 +90,11 @@ void doFollow(char *info) {
   ITERATE_LIST(cdTmp, cdI) {
     /* Find the follower */
     fdTmp = listGetWith(followers, cdTmp, followerFind);
-    if(fdTmp->leader == cdTarget) {
-      char_to_room(cdTmp, rdTmp);
-      listRemoveWith(toFollow, cdTmp, followerFind);
+    if(fdTmp != NULL) {
+      if(fdTmp->leader == cdTarget) {
+	char_to_room(cdTmp, rdTmp);
+	listRemoveWith(toFollow, cdTmp, followerFind);
+      }
     }
   } deleteListIterator(cdI);
 
