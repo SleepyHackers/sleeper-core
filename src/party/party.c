@@ -1,6 +1,7 @@
 #include <python2.7/Python.h>        // to add Python hooks
 
 #include "../mud.h"
+#include "../room.h"
 #include "../character.h"
 #include "../list.h"
 
@@ -68,6 +69,8 @@ void doFollow(char *info) {
   LEADER_DATA *ldTmp = NULL;
   CHAR_DATA *cdTmp = NULL, *cdTarget = NULL;
   ROOM_DATA *rdTmp = NULL;
+  ROOM_DATA *rdCur = NULL;
+
 
   hookParseInfo(info, &cdTarget, &rdTmp);
  
@@ -75,8 +78,17 @@ void doFollow(char *info) {
   ldTmp = listGetWith(leaders, cdTarget, leaderFind);
 
   if(ldTmp != NULL) {
-    send_to_char(ldTmp->leader, "Found!\r\n");
-    /* TODO: Code to test each follower goes here */
+    const char *cDir = NULL;
+    EXIT_DATA *edTmp = NULL;
+    rdCur = charGetRoom(cdTarget);
+
+    HASH_ITERATOR *hiI = newHashIterator(rdCur->exits);
+    ITERATE_HASH(cDir, edTmp, hiI) {
+      if(exitGetRoom(edTmp) == rdTmp) {
+	send_to_char(cdTarget, "match found\r\n");
+      }
+    } deleteHashIterator(hiI);
+
   }
 }
 
