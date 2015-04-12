@@ -11,7 +11,7 @@
 
 #include "party.h"
 
-LIST *leaders = NULL, *followers;
+LIST *leaders = NULL, *followers = NULL, *toFollow = NULL;
 
 
 typedef struct {
@@ -76,9 +76,30 @@ void deleteFollower(FOLLOWER_DATA *ldFollower) {
   free(ldFollower);
 }
 
+void doFollow(char *info) {
+  LEADER_DATA *ldTmp = NULL;
+  CHAR_DATA *cdTarget = NULL, *cdTmp = NULL;
+  ROOM_DATA *rdTmp = NULL, *rdCur = NULL;
+  EXIT_DATA *edTmp = NULL;
+  FOLLOWER_DATA *fdTmp = NULL;
+
+  hookParseInfo(info, &cdTarget, &rdTmp);
+
+  LIST_ITERATOR *cdI = newListIterator(toFollow);
+
+  ITERATE_LIST(cdTmp, cdI) {
+    /* Find the follower */
+    fdTmp = listGetWith(followers, cdTmp, followerFind);
+    if(fdTmp->leader == cdTarget) {
+      char_to_room(cdTmp, rdTmp);
+      listRemoveWith(toFollow, cdTmp, followerFind);
+    }
+  } deleteListIterator(cdI);
+
+}
 
 /* Hook to run on "exit", allows following of NPCs and PCs */
-void doFollow(char *info) {
+void doFollowCheck(char *info) {
   LEADER_DATA *ldTmp = NULL;
   CHAR_DATA *cdTarget = NULL, *cdTmp = NULL;
   ROOM_DATA *rdTmp = NULL, *rdCur = NULL;
@@ -97,7 +118,7 @@ void doFollow(char *info) {
 
     ITERATE_LIST(cdTmp, cdI) {
       if(charGetRoom(cdTmp) == rdCur && can_see_exit(cdTmp, edTmp)) {
-	
+	listPut(toFollow, cdTmp);
       }
     } deleteListIterator(cdI);
   }
@@ -210,7 +231,9 @@ COMMAND(cmd_follow) {
 /* Init us in the mainloop */
 void init_party(void) {
   add_cmd("follow", NULL, cmd_follow, "player", FALSE); /* Add the follow command */
-  hookAdd("exit", (void*)doFollow);                           /* Add the follow hook to "exit" */
+  hookAdd("exit", (void*)doFollowCheck);                           /* Add the follow hook to "exit" */
+  hookAdd("enter", (void*)doFollow);
   leaders = newList();                                  /* Init our list of leaders */
   followers = newList();                                /* Ini tour list of followers */
+  toFollow = newList();
 }
