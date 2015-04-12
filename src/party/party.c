@@ -8,12 +8,14 @@
 
 LIST *leaders = NULL;
 
+/* leader comparator for list* functions */
 int leaderFind(const CHAR_DATA *cmpto, const LEADER_DATA *cur) {
-  return !(cur->leader == cmpto);
+  return cur->leader != cmpto;
 }
 
+/* follower comparator for list* functions */
 int followerFind(const CHAR_DATA *cmpto, const LEADER_DATA *cur) {
-  return !(cur == cmpto);
+  return cur != cmpto);
 }
 
 /* Creates a new leader, with a first follower */
