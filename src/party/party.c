@@ -15,7 +15,7 @@ int leaderFind(const CHAR_DATA *cmpto, const LEADER_DATA *cur) {
 
 /* follower comparator for list* functions */
 int followerFind(const CHAR_DATA *cmpto, const LEADER_DATA *cur) {
-  return cur != cmpto);
+  return cur != cmpto;
 }
 
 /* Creates a new leader, with a first follower */
@@ -55,9 +55,16 @@ void doFollow(char *info) {
 
   if(ldTmp != NULL) {
     send_to_char(ldTmp->leader, "Found!\r\n");
+    /* TODO: Code to test each follower goes here */
   }
 }
 
+/* Follows a target player. Takes one or no args. 
+   arg1 - The target
+   If no args are given, stops following players
+
+   TODO: Add a pointers to allow quick unfollows
+*/
 COMMAND(cmd_follow) {
   /* Our cstring buffers */
   char buffy[MAX_BUFFER];
