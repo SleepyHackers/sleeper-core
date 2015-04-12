@@ -8,6 +8,13 @@
 
 LIST *leaders = NULL;
 
+int leaderFind(const CHAR_DATA *cmpto, const LEADER_DATA *cur) {
+  return !(cur->leader == cmpto);
+}
+
+int followerFind(const CHAR_DATA *cmpto, const LEADER_DATA *cur) {
+  return !(cur == cmpto);
+}
 
 /* Creates a new leader, with a first follower */
 LEADER_DATA *newLeader(CHAR_DATA *cdLeader, CHAR_DATA *cdFollower) {
@@ -31,24 +38,22 @@ void deleteLeader(LEADER_DATA *ldLeader) {
 }
 
 /* Hook to run on "enter", allows following of NPCs and PCs */
-void doFollow(char *arg) {
+void doFollow(char *info) {
   char buffy[MAX_BUFFER];
   char buffy1[MAX_BUFFER];
 
-  arg = two_args(arg, buffy, buffy1);
-
-  LIST_ITERATOR *i = newListIterator(leaders);
   LEADER_DATA *ldTmp = NULL;
-  CHAR_DATA *cdTmp = NULL;
+  CHAR_DATA *cdTmp = NULL, *cdTarget = NULL;
+  ROOM_DATA *rdTmp = NULL;
+
+  hookParseInfo(info, &cdTarget, &rdTmp);
  
   /* Find our target Char */
+  ldTmp = listGetWith(leaders, cdTarget, leaderFind);
 
-  ITERATE_LIST(ldTmp, i) {
-    send_to_char(ldTmp->leader, "%i\r\n", charGetUID(ldTmp->leader));
-    if(ldTmp->leader == cdTmp) {
-      send_to_char(ldTmp->leader, "Blah, follows you\r\n");
-    }
-  } deleteListIterator(i);
+  if(ldTmp != NULL) {
+    send_to_char(ldTmp->leader, "Found!\r\n");
+  }
 }
 
 COMMAND(cmd_follow) {
@@ -56,7 +61,7 @@ COMMAND(cmd_follow) {
   char buffy[MAX_BUFFER];
   char buffy1[MAX_BUFFER];
 
-  CHAR_DATA *cdTmp = NULL; /* Temp pointer for leader */
+  CHAR_DATA *cdTmp = NULL, *cdTmp1; /* Temp pointer for leader */
 
   arg = one_arg(arg, buffy);  /* Get the first arg */  
 
@@ -76,26 +81,24 @@ COMMAND(cmd_follow) {
 
    } else { /* All clear, follow the leader now if possible */
 
-    LIST_ITERATOR *i = newListIterator(leaders);
     LEADER_DATA *ldTmp = NULL;
-    bool bFound = FALSE;
     
-    ITERATE_LIST(ldTmp, i) {
-      if(ldTmp->leader == cdTmp) {
+    ldTmp = listGetWith(leaders, cdTmp, leaderFind);
+
+    if(ldTmp != NULL) {
+      cdTmp1 = listGetWith(ldTmp->followers, ch, followerFind);
+      if(cdTmp1 == NULL) {
 	listPut(ldTmp->followers, ch);
-	bFound = TRUE;
 	send_to_char(ch, "Now following %s.\r\n", charGetName(cdTmp));
-	break;
+      } else {
+	send_to_char(ch, "You are already following %s.\r\n", charGetName(cdTmp));	
       }
-    } deleteListIterator(i);
-   
-    if(bFound == FALSE) {
+    } else {
       listPut(leaders, newLeader(cdTmp, ch));
       send_to_char(ch, "Now following %s.\r\n", charGetName(cdTmp));
     }
-    
-  }
 
+  }
 }
 
 void init_party(void) {
