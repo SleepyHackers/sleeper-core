@@ -269,6 +269,11 @@ int main(int argc, char **argv)
   init_party();
 #endif
 
+#ifdef MODULE_PERSIST
+  log_string("Initializing Global Persistence system");
+  init_persist();
+#endif
+
   /**********************************************************************/
   /*                   SET UP ALL OF OUR PYTHON STUFF                   */
   /**********************************************************************/
