@@ -54,7 +54,9 @@
 #ifdef MODULE_ALIAS
 #include "alias/alias.h"
 #endif
-
+#ifdef MODULE_DICE
+#include "dice/dice.h"
+#endif
 
 // local procedures
 void game_loop    ( int control );
@@ -267,6 +269,11 @@ int main(int argc, char **argv)
 #ifdef MODULE_PARTY
   log_string("Initializing party system");
   init_party();
+#endif
+
+#ifdef MODULE_DICE
+  log_string("Initializing dice system");
+  init_dice();
 #endif
 
   /**********************************************************************/
