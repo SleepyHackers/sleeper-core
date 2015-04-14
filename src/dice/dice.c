@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "randistrs.h"
 #include "dice.h"
+#include "character.h"
 
 int srDie() { 
   int n = rand_number(1, 6);
@@ -46,6 +47,27 @@ char* formatRoll(int* roll, int dice, int tn) {
 }
 
 COMMAND(roll) {
-  //Need to get two int args here as # of dice and TN
+  char dicebuf[MAX_BUFFER];
+  char tnbuf[MAX_BUFFER];
+  arg = two_args(arg, dicebuf, tnbuf);
+  
+  int dice = strtol(dicebuf, NULL, 10);
+  int tn = strtol(tnbuf, NULL, 10);
+
+  if ((!dice) || (!tn)) {
+    send_to_char(ch, "Syntax is: roll <dice> <tn>\r\n");
+    return;
+  }
+
+  int* roll = srDice(dice);
+  char* buf = formatRoll(roll, dice, tn);
+
+  send_to_char(ch, "%s\r\n", buf);
+
+  free(roll);
+  free(buf);
 }
 
+void init_dice() {
+  add_cmd("roll", NULL, roll, NULL, FALSE);
+}

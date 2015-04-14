@@ -32,7 +32,7 @@
 #define MODULE_SOCIALS
 #define MODULE_HELP2
 #define MODULE_TIME
-
+#define MODULE_DICE
 /* 
  * SleeperMUD modules
  */
