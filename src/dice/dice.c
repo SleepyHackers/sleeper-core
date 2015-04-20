@@ -52,7 +52,7 @@ int testRoll(int* roll, int dice, int tn) {
 char* dumpRoll(int* roll, int dice) {
   int die;
 
-  char* msg = malloc((sizeof(char) * 128));
+  char* msg = malloc((sizeof(char) * 1024));
   char* buf = malloc((sizeof(char) * 4));
   memset(msg, '\0', sizeof(*msg));
   memset(buf, '\0', sizeof(*buf));
@@ -70,7 +70,7 @@ char* dumpRoll(int* roll, int dice) {
 char* dumpRollTN(int* roll, int dice, int tn) {
   int die;
 
-  char* msg = malloc((sizeof(char) * 128));
+  char* msg = malloc((sizeof(char) * 1024));
   char* buf = malloc((sizeof(char) * 8));
   memset(msg, '\0', sizeof(*msg));
   memset(buf, '\0', sizeof(*buf));
@@ -103,6 +103,12 @@ void do_roll(CHAR_DATA* ch, const char* cmd, char* arg, const char* dietype, int
   //Both TN and sides are optional
   if (!parse_args(ch, FALSE, cmd, arg, "int | int int | int int int", &dice, &tn, &sides)) {
     send_to_char(ch, SYNTAX);
+    return;
+  }
+
+  //Don't overflow
+  if (dice > MAX_DICE) {
+    send_to_char(ch, "Sorry, max dice in one roll is %d.\r\n", MAX_DICE);
     return;
   }
 
