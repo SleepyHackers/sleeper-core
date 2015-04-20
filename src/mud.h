@@ -268,13 +268,14 @@ BUFFER *read_file             ( const char *file );
 /* strings.c */
 const char *one_arg_safe      ( const char *fStr, char *bStr );
 char   *one_arg               ( char *fStr, char *bStr );
-char   *two_args              ( char *from, char *arg1, char *arg2);
-char   *three_args            ( char *from, char *arg1, char *arg2, char *arg3);
-void    arg_num               ( const char *from, char *to, int num); 
+char   *two_args              ( char *from, char *arg1, char *arg2 );
+char   *three_args            ( char *from, char *arg1, char *arg2, char *arg3 );
+char   *four_args             ( char *from, char*arg1, char* arg2, char *arg3, char *arg4 );
+void    arg_num               ( const char *from, char *to, int num ); 
 bool    compares              ( const char *aStr, const char *bStr );
 bool    is_prefix             ( const char *aStr, const char *bStr );
 char   *capitalize            ( char *txt );
-char   *strfind               (char *txt, char *sub);
+char   *strfind               ( char *txt, char *sub );
 
 /* mccp.c */
 bool  compressStart     ( SOCKET_DATA *dsock, unsigned char teleopt );

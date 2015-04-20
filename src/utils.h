@@ -25,11 +25,7 @@
 #define MAX(a, b)             ((a) < (b) ? (b) : (a))
 #endif
 
-//
-// return a random number pulled from a uniform distribution 
-// between the two bounds
-#define rand_number(min, max) rd_iuniform(min, max) //Pull a random number from the Mersenne Twister PRNG within a range
-
+int rand_number(int min, int max);
 //
 // Returns a random number between 0 and 1. Numbers are evenly distributed
 double rand_percent(void);

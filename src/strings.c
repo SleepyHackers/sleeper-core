@@ -136,6 +136,10 @@ char *three_args(char *from, char *arg1, char *arg2, char *arg3) {
   return one_arg(one_arg(one_arg(from, arg1), arg2), arg3);
 }
 
+char *four_args(char *from, char*arg1, char* arg2, char *arg3, char *arg4) {
+  return one_arg(one_arg(one_arg(one_arg(from, arg1), arg2), arg3), arg4);
+}
+
 //
 // pull out the argument of the specified number
 //
