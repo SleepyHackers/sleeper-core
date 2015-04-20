@@ -33,7 +33,6 @@
 #include "event.h"
 #include "action.h"
 #include "hooks.h"
-#include "randistrs.h"
 
 //*****************************************************************************
 // mandatory modules
