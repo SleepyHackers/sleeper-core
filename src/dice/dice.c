@@ -102,17 +102,16 @@ void do_roll(CHAR_DATA* ch, const char* cmd, char* arg, const char* dietype, int
   //Roll dice
   roll = rollDice(dice, sides, diefunc);
   msg = dumpRoll(roll, dice, tn);
+
   //If no TN supplied (or TN 0), format roll simply
   if (!(tn)) {
     snprintf(out, MAX_BUFFER, "%s rolls %d %d-sided %s dice :: %s\r\n", charGetName(ch), dice, sides, dietype, msg);
-    free(msg);
   }
 
   //Otherwise, use dumpRollTN and testRoll to get formatted, tested output
   else {
     successes = testRoll(roll, dice, tn);
     snprintf(out, MAX_BUFFER, "%s rolls %d %d-sided %s dice at TN %d :: %s :: %d successes.\r\n", charGetName(ch), dice, sides, dietype, tn, msg, successes);
-    free(msg);
   }
 
   //Send message to all characters in the room
@@ -121,6 +120,7 @@ void do_roll(CHAR_DATA* ch, const char* cmd, char* arg, const char* dietype, int
     send_to_char(c, out);
   } deleteListIterator(chars);
 
+  free(msg);
   free(out);
   free(roll);
 }
