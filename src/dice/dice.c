@@ -99,6 +99,14 @@ void do_roll(CHAR_DATA* ch, const char* cmd, char* arg, const char* dietype, int
     sides = 6;
   }
 
+  //Don't overflow
+  else {
+    if (sides > MAX_SIDES) {
+      send_to_char(ch, "Sorry, max sides for a dice roll is %d.\r\n", MAX_SIDES);
+      return;
+    }
+  }
+
   //Roll dice
   roll = rollDice(dice, sides, diefunc);
   msg = dumpRoll(roll, dice, tn);
