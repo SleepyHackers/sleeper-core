@@ -48,26 +48,8 @@ int testRoll(int* roll, int dice, int tn) {
   return successes;
 }
 
-//Format a roll into a string buffer. Must be freed after use.
-char* dumpRoll(int* roll, int dice) {
-  int die;
-
-  char* msg = malloc((sizeof(char) * 1024));
-  char* buf = malloc((sizeof(char) * 4));
-  memset(msg, '\0', sizeof(*msg));
-  memset(buf, '\0', sizeof(*buf));
- 
-  for (die=0; die < dice; die++) {
-    snprintf(buf, 4, " %d", roll[die]);
-    strncat(msg, buf, 128);
-  }
-
-  free(buf);
-  return msg;
-}
-
-//Format a roll into a string buffer, with TN testing. Must be freed after use.
-char* dumpRollTN(int* roll, int dice, int tn) {
+//Format a roll into a string buffer, with optional TN testing. Must be freed after use.
+char* dumpRoll(int* roll, int dice, int tn) {
   int die;
 
   char* msg = malloc((sizeof(char) * 1024));
@@ -76,7 +58,7 @@ char* dumpRollTN(int* roll, int dice, int tn) {
   memset(buf, '\0', sizeof(*buf));
 
   for (die=0; die < dice; die++) {
-    if (roll[die] >= tn) {
+    if ((tn) && (roll[die] >= tn)) {
       snprintf(buf, 8, "{W%d{n ", roll[die]);
     }
     else {
@@ -119,17 +101,15 @@ void do_roll(CHAR_DATA* ch, const char* cmd, char* arg, const char* dietype, int
 
   //Roll dice
   roll = rollDice(dice, sides, diefunc);
-
+  msg = dumpRoll(roll, dice, tn);
   //If no TN supplied (or TN 0), format roll simply
   if (!(tn)) {
-    msg = dumpRoll(roll, dice);
     snprintf(out, MAX_BUFFER, "%s rolls %d %d-sided %s dice :: %s\r\n", charGetName(ch), dice, sides, dietype, msg);
     free(msg);
   }
 
   //Otherwise, use dumpRollTN and testRoll to get formatted, tested output
   else {
-    msg = dumpRollTN(roll, dice, tn);
     successes = testRoll(roll, dice, tn);
     snprintf(out, MAX_BUFFER, "%s rolls %d %d-sided %s dice at TN %d :: %s :: %d successes.\r\n", charGetName(ch), dice, sides, dietype, tn, msg, successes);
     free(msg);
