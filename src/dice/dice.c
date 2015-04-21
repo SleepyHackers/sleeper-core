@@ -18,7 +18,7 @@ int srDie(int sides) {
   int n = rand_number(1, sides);
 
   if (n == sides) { return (n+(srDie(sides))); }
-  else        { return n; }
+  else            { return n; }
 }
 
 //Make dice roll of specified parameters as array of ints on the heap. Roll must be freed after use.
@@ -108,7 +108,7 @@ void do_roll(CHAR_DATA* ch, const char* cmd, char* arg, const char* dietype, int
     snprintf(out, MAX_BUFFER, "%s rolls %d %d-sided %s dice :: %s\r\n", charGetName(ch), dice, sides, dietype, msg);
   }
 
-  //Otherwise, use dumpRollTN and testRoll to get formatted, tested output
+  //Otherwise, use testRoll to get successes
   else {
     successes = testRoll(roll, dice, tn);
     snprintf(out, MAX_BUFFER, "%s rolls %d %d-sided %s dice at TN %d :: %s :: %d successes.\r\n", charGetName(ch), dice, sides, dietype, tn, msg, successes);
