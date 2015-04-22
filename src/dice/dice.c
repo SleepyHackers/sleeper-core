@@ -52,7 +52,7 @@ int testRoll(int* roll, int dice, int tn) {
 char* dumpRoll(int* roll, int dice, int tn) {
   int die;
 
-  char* msg = malloc((sizeof(char) * 1024));
+  char* msg = malloc((sizeof(char) * MAX_BUFFER));
   char* buf = malloc((sizeof(char) * 8));
   memset(msg, '\0', sizeof(*msg));
   memset(buf, '\0', sizeof(*buf));
