@@ -37,7 +37,7 @@
  * SleeperMUD modules
  */
 #define MODULE_PARTY
-
+#define MODULE_STATS
 
 //*****************************************************************************
 // To avoid having to write some bulky structure names, we've typedef'd a

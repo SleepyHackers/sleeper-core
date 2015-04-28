@@ -57,6 +57,9 @@
 #ifdef MODULE_DICE
 #include "dice/dice.h"
 #endif
+#ifdef MODULE_STATS
+#include "stats/stats.h"
+#endif
 
 // local procedures
 void game_loop    ( int control );
@@ -274,6 +277,11 @@ int main(int argc, char **argv)
 #ifdef MODULE_DICE
   log_string("Initializing dice system");
   init_dice();
+#endif
+
+#ifdef MODULE_STATS
+  log_string("Initializing stats system");
+  init_stats();
 #endif
 
   /**********************************************************************/
