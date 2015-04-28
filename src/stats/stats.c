@@ -9,10 +9,6 @@
 #include "character.h"
 
 //Structs for character data
-
-//When you malloc this, you get a pointer to a bigass memory block that fits the size
-//of all these ints, they arent individually allocated - in fact you dont have anything
-//allocated in there, no strings or anything
 struct char_stats {
   int strength;
   int body;
@@ -26,14 +22,21 @@ struct char_stats {
   int mental_condition;
   double essence;
   double bio_index;
+  int magic;
+  long karma;
+  long tke;
+  int augStrength;
+  int augBody;
+  int augQuickness;
+  int augCharisma;
+  int augWillpower;
+  int augIntelligence;
 }; //Semicolon at end of struct definitions
        
        
 struct char_stats *newCharStats () { //Struct keyword
-  //Calloc is almost never necessary, a plain malloc will suffice
   struct char_stats *character = malloc(sizeof(*character)); //Must use struct keyword
 
-  //Pointer access operator is ->
   character->strength              = 1;
   character->body                  = 1;
   character->quickness             = 1;
@@ -46,12 +49,19 @@ struct char_stats *newCharStats () { //Struct keyword
   character->mental_condition      = 10;
   character->essence               = 6.0;
   character->bio_index             = 9.0;
-  
-  //Return pointer to new character
+  character->magic                 = 6;
+  character->karma                 = 0;
+  character->tke                   = 0;
+  character->augStrength           = 0;
+  character->augBody               = 0;
+  character->augQuickness          = 0;
+  character->augCharisma           = 0;
+  character->augWillpower          = 0;
+  character->augIntelligence       = 0;
+
   return character;
 }
 
-//ok, wait, goddamn em
 void deleteCharStats(struct char_stats *character) {
   free(character);
 } 
@@ -65,23 +75,6 @@ struct char_stats* copyCharStats(struct char_stats *character) {
 void copyCharStatsTo(struct char_stats *character, struct char_stats *target) {
   memcpy(target, character, sizeof(*target));
 }
-
-/*
-  int strength;
-  int body;
-  int quickness;
-  int charisma;
-  int willpower;
-  int intelligence;
-  long money;
-  long bank_balance;
-  int physical_condition;
-  int mental_condition;
-  double essence;
-  double bio_index;
-*/
-
-
 
 STORAGE_SET* storeCharStats(struct char_stats *character) {
   STORAGE_SET* set = new_storage_set();
@@ -98,6 +91,15 @@ STORAGE_SET* storeCharStats(struct char_stats *character) {
   store_int(set, "mental_condition", character->mental_condition);
   store_double(set, "essence", character->essence);
   store_double(set, "bio_index", character->bio_index);
+  store_int(set, "magic", character->magic);
+  store_long(set, "karma", character->karma);
+  store_long(set, "tke", character->tke);
+  store_int(set, "augStrength", character->augStrength);
+  store_int(set, "augBody", character->augBody);
+  store_int(set, "augQuickness", character->augQuickness);
+  store_int(set, "augCharisma", character->augCharisma);
+  store_int(set, "augWillpower", character->augWillpower);
+  store_int(set, "augIntelligence", character->augIntelligence);
 
   return set;
 }
@@ -105,9 +107,6 @@ STORAGE_SET* storeCharStats(struct char_stats *character) {
 struct char_stats* readCharStats(STORAGE_SET *set) {
   struct char_stats* character = newCharStats();
   
-  //dont have to dereference the character, character->strength is equivalent
-  //to (*character).strength is there an intdup? dont need it, just gotta call the
-  //you have to copy strings because they are pointers to memory
   character->strength = read_int(set, "strength");
   character->body = read_int(set, "body");
   character->quickness = read_int(set, "quickness");
@@ -120,22 +119,23 @@ struct char_stats* readCharStats(STORAGE_SET *set) {
   character->mental_condition = read_long(set, "mental_condition");
   character->essence = read_double(set, "essence");
   character->bio_index = read_double(set, "bio_index");
+  character->magic = read_int(set, "magic");
+  character->karma = read_long(set, "karma");
+  character->tke = read_long(set, "tke");
+  character->augStrength = read_int(set, "augStrength");
+  character->augBody = read_int(set, "augBody");
+  character->augQuickness = read_int(set, "augQuickness");
+  character->augCharisma = read_int(set, "augCharisma");
+  character->augWillpower = read_int(set, "augWillpower");
+  character->augIntelligence = read_int(set, "augIntelligence");
 
   return character;
 }
 
-    /*
-well, what do you think?
-looks...perfect 
-     */  
-
-
-//Gotta tell the compiler it's a struct here, unless you use a typedef somewhere.
 int charGetStrength (struct char_stats *character) {
   return character->strength;
 }
 
-//charGetBody function name already taken
 int charGetBod (struct char_stats *character) {
   return character->body;
 }
@@ -164,12 +164,48 @@ long charGetMoney (struct char_stats *character) {
   return character->money;
 }
        
-double getEssence (struct char_stats *character) {
+double charGetEssence (struct char_stats *character) {
   return character->essence;
 }
 
-double getBioIndex (struct char_stats *character) {
+double charGetBioIndex (struct char_stats *character) {
   return character->bio_index;
+}
+
+int charGetmagic (struct char_stats *character) {
+  return character->magic;
+}
+
+long charGetKarma (struct char_stats *character) {
+  return character->karma;
+}
+
+long charGetTKE (struct char_stats *character) {
+  return character->tke;
+}
+
+int charGetAugStrength (struct char_stats *character) {
+  return character->augStrength;
+}
+
+int charGetAugBody (struct char_stats *character) {
+  return character->augBody;
+}
+
+int charGetAugQuickness (struct char_stats *character) {
+  return character->augQuickness;
+}
+
+int charGetAugCharisma (struct char_stats *character) {
+  return character->augCharisma;
+}
+
+int charGetAugWillpower (struct char_stats *character) {
+  return character->augWillpower;
+}
+
+int charGetAugIntelligence (struct char_stats *character) {
+  return character->augIntelligence;
 }
 
 void init_stats() {
@@ -180,5 +216,5 @@ void init_stats() {
 						 copyCharStats,
 						 storeCharStats,
 						 readCharStats);
-  auxiliariesInstall("Character Stats", stats_aux);
+  auxiliariesInstall("character_stats", stats_aux);
 }

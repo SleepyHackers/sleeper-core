@@ -6,8 +6,6 @@ with basic selection for name, sex, and race.
 '''
 import mudsys, mud, socket, char, hooks
 
-
-
 def check_char_name(arg):
     '''checks to make sure the character name is valid. Names are valid if they
        are greater than 2 characters, less than 13, and comprise only alpha
@@ -51,6 +49,17 @@ def cg_race_handler(sock, arg):
     else:
         sock.ch.race = arg.lower()
         sock.pop_ih()
+
+def cg_stats_handler(sock, arg):
+    stats = sock.ch.getAuxiliary("character_stats")
+
+    sock.send("Creating default stats for now, wee")
+    stats.strength = 3
+    stats.body = 4
+    stats.quickness = 5
+    stats.charisma = 6
+    stats.willpower = 5
+    stats.intelligence = 3
 
 def cg_finish_handler(sock, arg):
     # pop our input handler for finishing character generation
