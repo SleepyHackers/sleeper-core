@@ -1,7 +1,7 @@
 #include <string.h>
-#include <stdlib.h> //For malloc
+#include <stdlib.h> 
 //CFLAGS in module.mk allows us a nicer syntax here
-#include "mud.h" //Have to include this for pretty much anything
+#include "mud.h" 
 #include "handler.h"
 #include "storage.h"
 #include "auxiliary.h"
@@ -31,11 +31,12 @@ struct char_stats {
   int augCharisma;
   int augWillpower;
   int augIntelligence;
-}; //Semicolon at end of struct definitions
+};
        
-       
-struct char_stats *newCharStats () { //Struct keyword
-  struct char_stats *character = malloc(sizeof(*character)); //Must use struct keyword
+/*Return a pointer to a new char_stats struct on the heap,
+  initialized with default values  */
+struct char_stats *newCharStats () { 
+  struct char_stats *character = malloc(sizeof(*character)); 
 
   character->strength              = 1;
   character->body                  = 1;
@@ -62,20 +63,25 @@ struct char_stats *newCharStats () { //Struct keyword
   return character;
 }
 
+//Free a previously allocated char_stats struct
 void deleteCharStats(struct char_stats *character) {
   free(character);
 } 
 
+/*Copy the contents of a char_stats struct to a new location in memory,
+  and return a pointer*/
 struct char_stats* copyCharStats(struct char_stats *character) {
   struct char_stats* new = newCharStats();
   memcpy(new, character, sizeof(*new));
   return new;
 }
 
+//Copy the contents of one char_stats_struct to another
 void copyCharStatsTo(struct char_stats *character, struct char_stats *target) {
   memcpy(target, character, sizeof(*target));
 }
 
+//Return a char_stats struct represented as a storage set
 STORAGE_SET* storeCharStats(struct char_stats *character) {
   STORAGE_SET* set = new_storage_set();
   
@@ -104,6 +110,7 @@ STORAGE_SET* storeCharStats(struct char_stats *character) {
   return set;
 }
 
+//Return a char_stats struct from a storage set
 struct char_stats* readCharStats(STORAGE_SET *set) {
   struct char_stats* character = newCharStats();
   
@@ -131,6 +138,8 @@ struct char_stats* readCharStats(STORAGE_SET *set) {
 
   return character;
 }
+
+/* Get values for char_stats */
 
 int charGetStrength (struct char_stats *character) {
   return character->strength;
@@ -208,6 +217,7 @@ int charGetAugIntelligence (struct char_stats *character) {
   return character->augIntelligence;
 }
 
+//Initialize the stats module, installing needed auxiliary data into the core
 void init_stats() {
   AUXILIARY_FUNCS* stats_aux = newAuxiliaryFuncs(AUXILIARY_TYPE_CHAR, 
 						 newCharStats,
