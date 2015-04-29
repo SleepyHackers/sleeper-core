@@ -105,7 +105,7 @@ auxiliariesInstall(const char *name, AUXILIARY_FUNCS *funcs);
 // remove the functions for manipulating the auxiliary data
 //
 void
-auxiliariesUnintall(const char *name);
+auxiliariesUninstall(const char *name);
 
 
 //
