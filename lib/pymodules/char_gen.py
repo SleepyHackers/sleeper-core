@@ -60,6 +60,7 @@ def cg_stats_handler(sock, arg):
     stats.charisma = 6
     stats.willpower = 5
     stats.intelligence = 3
+    sock.pop_ih()
 
 def cg_finish_handler(sock, arg):
     # pop our input handler for finishing character generation
@@ -100,10 +101,15 @@ def cg_name_prompt(sock):
 def cg_sex_prompt(sock):
     sock.send_raw("What is your sex (M/F)? ")
 
+#its me. bob. bob. bob.
+
 def cg_race_prompt(sock):
     sock.send("Available races are: ")
     sock.send(mud.list_races(True))
     sock.send_raw("\r\nPlease enter your choice: ")
+
+def cg_stats_prompt(sock):
+    sock.send("Yo you a bitch")
 
 def cg_finish_prompt(sock):
     sock.send_raw("{c*** Press enter to finish character generation:{n ")
@@ -120,6 +126,7 @@ def char_gen_hook(info):
     sock, = hooks.parse_info(info)
     sock.push_ih(mudsys.handle_cmd_input, mudsys.show_prompt, "playing")
     sock.push_ih(cg_finish_handler, cg_finish_prompt)
+    sock.push_ih(cg_stats_handler, cg_stats_prompt)
     sock.push_ih(cg_race_handler, cg_race_prompt)
     sock.push_ih(cg_sex_handler, cg_sex_prompt)
     sock.push_ih(cg_name_handler, cg_name_prompt)
