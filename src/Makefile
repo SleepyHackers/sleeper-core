@@ -25,6 +25,9 @@ MODULES := dyn_vars set_val olc2 editor items scripts
 # optional modules go on this line
 MODULES += time socials alias help2
 
+# Dynamic modules
+MODULES2 := dice party
+
 # flags to use during compilation
 C_FLAGS := -Wall -g -ggdb 
 
@@ -71,6 +74,8 @@ BACKUP_FILE := backup/$(PROJECT)-$(shell date +%Y-%m-%d-%Hh%Mm).tar.tgz
 ################################################################################
 # make commands
 ################################################################################
+.PHONY: all clean modules
+
 all: $(O_FILES)
 	@$(CC) -o $(BINARY) $(O_FILES) $(LIBS)
 	@echo -e "$(BINARY) successfully compiled."\
@@ -95,12 +100,16 @@ backup: clean
 # clears all of our Python files
 clean:
 	@rm -f $(BINARY)
-	@rm -f *.o $(patsubst %,%/*.o, $(MODULES))
+	@rm -f *.o $(patsubst %,%/*.o, $(MODULES)) modules/*/*.o
 	@rm -f *.d $(patsubst %,%/*.d, $(MODULES))
 	@rm -f *~ $(patsubst %,%/*~, $(MODULES))
 	@rm -f ../lib/pymodules/*~
 	@rm -f ../lib/pymodules/*.pyc
 	@echo "$(PROJECT) source files cleaned"
+
+# Build dynamic modules
+modules:
+	@${foreach module,${MODULES2},/bin/bash -c "cd modules/${module} && make && cd ..";}
 
 # include all of our dependencies
 include $(patsubst %.c,%.d, $(SRC))
