@@ -24,6 +24,7 @@ struct mudModule {
 LIST* module_list;   //List of modules currently loaded into the core
 LIST* autoload_list; //List of modules to load on boot
 char* module_dir;    //Location of compiled modules
+char* autoload_file; //Location of autoload list
 
 //Return an empty, initialized mudModule structure
 static struct mudModule* newMudModule() {
@@ -330,13 +331,13 @@ static void saveAutoloadList() {
   STORAGE_SET* set = new_storage_set();
 
   store_list(set, "autoload_list", gen_store_list(autoload_list, mudModuleStore));
-  storage_write(set, AUTOLOAD_FILE);
+  storage_write(set, autoload_file);
   storage_close(set);
 }
 
 //Load the modules.init file from disk
 static void loadAutoloadList() {
-  STORAGE_SET* set = storage_read(AUTOLOAD_FILE);
+  STORAGE_SET* set = storage_read(autoload_file);
   if (!set) { return; }
   autoload_list = gen_read_list(read_list(set, "autoload_list"), mudModuleRead);
   storage_close(set);
@@ -461,16 +462,28 @@ COMMAND(doModule) {
 
 //Initialize module system
 void init_modules() {
-  module_dir = malloc(1024);
+  module_dir    = malloc(1024);
+  autoload_file = malloc(1024);
+  
   const char* md = mudsettingGetString("module_dir");
+  const char* af = mudsettingGetString("autoload_file");
+  
   if (!md) {
     log_string("Error: 'module_dir' is not configured, can't boot module system.");
     return;
   }
-  strncpy(module_dir, md, 1024);
-  module_list = newList();
+  if (!af) {
+    log_string("Error: 'autoload_file' is not configured, can't boot module system.");
+    return;
+  }
+
+  strncpy(module_dir,    md, 1024);
+  strncpy(autoload_file, af, 1024);
+  
+  module_list   = newList();
   autoload_list = newList();
   loadAutoloadList();
   runAutoloadList();
+  
   add_cmd("module", NULL, doModule, "admin", FALSE);
 }
