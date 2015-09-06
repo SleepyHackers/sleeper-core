@@ -8,6 +8,11 @@
 #include "list.h"
 #include "room.h"
 
+const char   MODULE_NAME[]    = "dice";
+const char   MODULE_DESC[]    = "Dice-rolling engine";
+const char   MODULE_DEPENDS[] = "";
+const double MODULE_VERSION   = 1.0;
+
 //Return random number between 1 and sides
 int genericDie(int sides) {
   return rand_number(1, sides);
@@ -98,13 +103,14 @@ void do_roll(CHAR_DATA* ch, const char* cmd, char* arg, const char* dietype, int
   if (!(sides)) {
     sides = 6;
   }
-
   //Don't overflow
-  else {
-    if (sides > MAX_SIDES) {
-      send_to_char(ch, "Sorry, max sides for a dice roll is %d.\r\n", MAX_SIDES);
-      return;
-    }
+  else if (sides > MAX_SIDES) {
+    send_to_char(ch, "Sorry, max sides for a dice roll is %d.\r\n", MAX_SIDES);
+    return;
+  }
+  else if (sides < 2) {
+    send_to_char(ch, "Sorry, minimum sides for a dice roll is 2.\r\n");
+    return;
   }
 
   //Roll dice
@@ -141,4 +147,17 @@ COMMAND(roll)  { do_roll(ch, cmd, arg, "generic", genericDie); }
 void init_dice() {
   add_cmd("sroll", NULL, sroll, "player", FALSE);
   add_cmd("roll", NULL, roll, "player", FALSE);
+}
+void destroy_dice() {
+  remove_cmd("sroll");
+  remove_cmd("roll");
+}
+
+bool onLoad() {
+  init_dice();
+  return TRUE;
+}
+bool onUnload() {
+  destroy_dice();
+  return TRUE;
 }

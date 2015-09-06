@@ -240,3 +240,12 @@ void init_follow(void) {
   followers = newList();                                /* Ini tour list of followers */
   toFollow = newList();
 }
+
+void destroy_follow() {
+  remove_cmd("follow");
+  hookRemove("exit", (void*)doFollowCheck);
+  hookRemove("enter", (void*)doFollow);
+  deleteList(leaders);
+  deleteList(followers);
+  deleteList(toFollow);
+}

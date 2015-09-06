@@ -20,7 +20,7 @@ BINARY  := sleeper
 PROJECT := $(shell echo $(BINARY) | tr A-Z a-z)
 
 # the modules we have installed -- mandatory modules go here
-MODULES := dyn_vars set_val olc2 editor items scripts party dice
+MODULES := dyn_vars set_val olc2 editor items scripts
 
 # optional modules go on this line
 MODULES += time socials alias help2
