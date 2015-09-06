@@ -17,6 +17,7 @@ struct mudModule {
   char* path;
   char* desc;
   char* depends;
+  LIST* revdepends;
   void* lib;
   double version;
 };
@@ -33,6 +34,7 @@ static struct mudModule* newMudModule() {
   new->path = malloc(1024);
   new->desc = malloc(1024);
   new->depends = malloc(1024);
+  new->revdepends = newList();
   new->version = 0.0;
   new->lib = NULL;
   return new;
@@ -115,17 +117,17 @@ struct mudModule* getMudModule(char* name, LIST* list) {
   return NULL;
 }
 
-//Check if module d of a minimum version is loaded - True if so, false otherwise
+//Check if module d of a minimum version is loaded - Return module if so, NULL otherwise
 __attribute__ ((nonnull(1)))
-static bool resolveDepend(char* d, double version) {
+struct mudModule* resolveDepend(char* d, double version) {
   struct mudModule* m = getMudModule(d, module_list);
-  if (!m) { return FALSE; }
-  if (m->version >= version) { return TRUE; }
+  if (!m) { return NULL; }
+  if (m->version >= version) { return m; }
   else {
     log_string("Module '%s' v%.1f doesn't meet version requirement for dependency: %s",
                m->name, m->version, d);
   }
-  return FALSE;
+  return NULL;
 }
 
 //Grab module from a "module-version" string
@@ -155,16 +157,19 @@ __attribute__ ((nonnull(1)))
 static bool checkDepends(struct mudModule* m) {
   char *mod;
   double version;
+  struct mudModule* t;
   char *d       = strndup(m->depends, 1024);
   char *p       = strtok(d, " ");
   while (p) {
     mod     = cutModule(p);
     version = cutVersion(p);
-    if (!(resolveDepend(mod,version))) {
+    t       = resolveDepend(mod, version);
+    if (!t) {
       log_string("Error: failed to resolve dependency '%s' v%.1f for module '%s'",
                  p, version, m->name);
       return FALSE;
     }
+    listQueue(t->revdepends, (void*)m);
     p = strtok(NULL, " -");
   }
   return TRUE;
@@ -172,9 +177,36 @@ static bool checkDepends(struct mudModule* m) {
 
 //Check if a module is depended on by any loaded modules
 __attribute__ ((nonnull(1)))
-static bool checkForDepend(char* name) {
-  return FALSE;
-  // TODO //
+static struct mudModule* checkRevDepend(struct mudModule* m) {
+  struct mudModule* d = NULL;
+  LIST_ITERATOR* i = newListIterator(m->revdepends);
+  
+  ITERATE_LIST(d, i) {
+    if (d)  { break; }
+  }
+  deleteListIterator(i);
+  return d;
+}
+
+static void cleanDepends(struct mudModule* m) {
+  struct mudModule* rd;
+  struct mudModule* d;
+  LIST_ITERATOR* di;
+
+  char *mod     = malloc(1024);
+  char *dep     = strndup(m->depends, 1024);
+  char *p       = strtok(dep, " ");
+  while (p) {
+    mod = cutModule(p);
+    d   = getMudModule(mod,module_list);
+    di  = newListIterator(d->revdepends);
+    ITERATE_LIST(rd, di) {
+      if (strncmp(rd->name, m->name, 1024) == 0) {
+	listRemove(d->revdepends, rd);    
+      } deleteListIterator(di);
+    }
+    p = strtok(NULL, " -");
+  }
 }
 
 //Load a module by path: create a new mudModule struct for it,
@@ -220,12 +252,14 @@ static bool unloadModule(char* name) {
     return FALSE; 
   }
 
-  rd = checkForDepend(name);
+  rd = checkRevDepend(m);
   if (rd) {
     log_string("Error: Module '%s' is relied on by module '%s', not unloading.\r\n",
                name, rd->name);
     return FALSE;
   }
+
+  cleanDepends(m);
   
   moduleUnloadFunc = fetchCallBool(m->lib, "onUnload");
   if (!moduleUnloadFunc) {
