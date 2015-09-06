@@ -14,16 +14,10 @@
 CC = gcc
 
 # the name of the binary file created that you will run to start your mud
-BINARY  := NakedMud
+BINARY  := sleeper
 
 # the name of the project - essentially, the executable sans capital letters
 PROJECT := $(shell echo $(BINARY) | tr A-Z a-z)
-
-# we'd like some messages we print out to be in color. Here is the string for
-# the color (cyan) that we print all important messages in. Any echos that use
-# color must also have the -e option (e.g. @echo -e "echo here")
-COLOR   := \x1B[36m
-NOCOLOR := \x1B[0m
 
 # the modules we have installed -- mandatory modules go here
 MODULES := dyn_vars set_val olc2 editor items scripts party dice
@@ -79,14 +73,14 @@ BACKUP_FILE := backup/$(PROJECT)-$(shell date +%Y-%m-%d-%Hh%Mm).tar.tgz
 ################################################################################
 all: $(O_FILES)
 	@$(CC) -o $(BINARY) $(O_FILES) $(LIBS)
-	@echo -e "$(COLOR)$(BINARY) successfully compiled."\
-		 "To run your mud, use ./$(BINARY) [port] &$(NOCOLOR)\n"\
+	@echo -e "$(BINARY) successfully compiled."\
+		 "To run your mud, use ./$(BINARY) [port] &\n"\
 
 # back up everything worth backing up
 backup: clean
 	@echo "Backing up: $(BACKUP_DIRS)"
 	@(cd ..; tar -zcf $(BACKUP_FILE) $(BACKUP_DIRS))
-	@echo -e "$(COLOR)New backup created: $(BACKUP_FILE)$(NOCOLOR)"
+	@echo -e "New backup created: $(BACKUP_FILE)"
 
 # make the object files. The modules are sort of annoying, in that 
 # if we do not use -o, the object files will be compiled in this directory,
