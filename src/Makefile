@@ -50,7 +50,7 @@ SRC     := gameloop.c mud.c utils.c interpret.c handler.c inform.c \
 	   \
 	   list.c property_table.c hashtable.c map.c storage.c set.c \
 	   buffer.c bitvector.c numbers.c prototype.c hooks.c parse.c \
-	   near_map.c command.c filebuf.c
+	   near_map.c command.c filebuf.c modules.c
 
 
 
@@ -60,7 +60,6 @@ include $(patsubst %,%/module.mk, $(MODULES))
 
 # determine the object files
 O_FILES := $(patsubst %.c,%.o, $(filter %.c, $(SRC)))
-
 
 
 ################################################################################
