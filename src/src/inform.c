@@ -564,12 +564,12 @@ void send_message(CHAR_DATA *to,
       switch(str[i]) {
       case 'n':
 	if(!ch) break;
-	sprintf(buf+j, see_char_as(to, ch));
+	sprintf(buf+j, "%s", see_char_as(to, ch));
 	while(buf[j] != '\0') j++;
 	break;
       case 'N':
 	if(!vict) break;
-	sprintf(buf+j, see_char_as(to, vict));
+	sprintf(buf+j, "%s", see_char_as(to, vict));
 	while(buf[j] != '\0') j++;
 	break;
       case 'm':
@@ -604,12 +604,12 @@ void send_message(CHAR_DATA *to,
 	break;
       case 'o':
 	if(!obj) break;
-	sprintf(buf+j, see_obj_as(to, obj));
+	sprintf(buf+j, "%s", see_obj_as(to, obj));
 	while(buf[j] != '\0') j++;
 	break;
       case 'O':
 	if(!vobj) break;
-	sprintf(buf+j, see_obj_as(to, vobj));
+	sprintf(buf+j, "%s", see_obj_as(to, vobj));
 	while(buf[j] != '\0') j++;
 	break;
       case 'a':

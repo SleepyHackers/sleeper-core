@@ -385,7 +385,7 @@ const char *see_exit_as(CHAR_DATA *ch, EXIT_DATA *target) {
     // build up what the exit looks like
     if(exitIsClosed(target)) {
       if(*exitGetName(target))
-	bprintf(buf, exitGetName(target));
+	bprintf(buf, "%s", exitGetName(target));
       else
 	bprintf(buf, "closed");
     }

@@ -457,7 +457,7 @@ PyObject *mud_log_string(PyObject *self, PyObject *args) {
   BUFFER *buf = newBuffer(1);
   bufferCat(buf, mssg);
   bufferReplace(buf, "%", "%%", TRUE);
-  log_string(bufferString(buf));
+  log_string("%s", bufferString(buf));
   deleteBuffer(buf);
   return Py_BuildValue("i", 1);
 }
