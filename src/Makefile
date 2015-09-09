@@ -48,7 +48,7 @@ C_FLAGS := ${C_FLAGS} ${shell ${PYTHON_CONFIG} --cflags} -Wno-strict-prototypes 
 
 # Libraries and link flags
 LIBS := -lz -lpthread -lcrypt -ldl -Wl,--export-dynamic
-LIBS := ${LIBS} ${shell ${PYTHON_CONFIG} --ldflags}
+LIBS += ${shell ${PYTHON_CONFIG} --ldflags}
 
 # SleeperMUD core source files
 # Extensions to the game should be done as modules, not here!
@@ -76,13 +76,19 @@ O_FILES := ${foreach src,${SRC},${OBJ_DIR}/${patsubst %.c,%.o,${src}}}
 DEPS := $(patsubst %.c,%.d, $(SRC))
 DEPS := ${foreach dep,${DEPS},${DEPENDS_DIR}/${notdir ${dep}}}
 
--include ${DEPS}
-
 ################################################################################
 # make commands
 ################################################################################
 
 .PHONY: all modules as-module syms clean
+
+all: ${DEPS} ${O_FILES}
+	@echo Linking ${BINARY}
+	@$(CC) -o $(BINARY) ${OBJ_DIR}/*.o $(LIBS)
+	@echo -e "$(BINARY) successfully compiled."\
+		 "To run your mud, use ./$(BINARY) [port] &\n"\
+
+-include ${DEPS}
 
 ${DEPENDS_DIR}/%.d: ${SRC_DIR}/%.c
 	@echo Building dependencies for $<
@@ -92,12 +98,6 @@ ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c
 	@echo Compiling $<
 	@${CC} ${C_FLAGS} -c $<
 	@mv ${notdir $@} ${OBJ_DIR}
-
-all: ${DEPS} ${O_FILES}
-	@echo Linking ${BINARY}
-	@$(CC) -o $(BINARY) ${OBJ_DIR}/*.o $(LIBS)
-	@echo -e "$(BINARY) successfully compiled."\
-		 "To run your mud, use ./$(BINARY) [port] &\n"\
 
 modules:
 	@${foreach module,${MODULES2},/bin/bash -c "cd ${MODULE_DIR}/${module} && make && cd ..";}
@@ -120,6 +120,8 @@ clean:
 	@rm -f ${OBJ_DIR}/*.o *.o ${DEPENDS_DIR}/*.d *~ */*~
 	@rm -f ../lib/pymodules/*~ ../lib/pymodules/*.pyc
 	@echo "$(PROJECT) source files cleaned"
+
+
 
 
 
