@@ -1,0 +1,6 @@
+start_room       : roof@tmp
+pulses_per_second: 10
+puid             : 19
+module_dir       : /home/awake/devA/lib/modules
+autoload_file    : /home/awake/devA/lib/modules.init
+-
