@@ -5,6 +5,7 @@
 NakedMud
 lib/misc/time
 lib/muddata
+lib/world/world
 core
 lib/
 log/

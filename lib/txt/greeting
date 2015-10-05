@@ -1,9 +1,13 @@
-{n
-                 NakedMud(tm) v3.8, content-less MUD engine.
+{Y (                               *          (      
+{R )\ ) (                        (  `         )\ )   
+{W(()/( )\  (   (         (  (   )\))(     ( (()/(   
+{R /(_)|(_)))\ ))\`  )   ))\ )( ((_)()\    )\ /(_))  
+{R(_))  _ /((_)((_)(/(  /((_|()\(_()((_)_ ((_|_))_{D   
+/ __|| {R(_))(_))((_)_\(_))  ((_){D  \/  | | | ||   \  
+\__ \| / -_) -_) '_ \) -_)| '_| |\/| | |_| || |) | 
+|___/|_\___\___| .__/\___||_| |_|  |_|\___/ |___/  
+               |_| 
+{NBuilt by: Zamnie, Nully, and this time even Kate!
+Based on NakedMUD by Geoff Hollis
+Based on SocketMUD by Brian Graversen
 
-                                  Created By
-                                 Geoff Hollis
-                            hollisgf@email.uc.edu
-
-                          Based on SocketMud(tm) by
-                               Brian Graversen
