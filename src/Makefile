@@ -21,7 +21,7 @@ PROJECT := $(shell echo $(BINARY) | tr A-Z a-z)
 MODULE_DIR := modules
 
 # Directories of modules using the 2.0 system
-MODULES2 := dice party stats
+MODULES2 := dice party stats websockets
 
 # Path to python config utility
 PYTHON_CONFIG := python2.7-config
@@ -47,7 +47,7 @@ C_FLAGS := -Wall -g -ggdb -fPIC -I${INCLUDE_DIR} -O2 -pipe -march=native
 C_FLAGS := ${C_FLAGS} ${shell ${PYTHON_CONFIG} --cflags} -Wno-strict-prototypes -Wno-unused-value -Wno-unused-but-set-variable 
 
 # Libraries and link flags
-LIBS := -lz -lpthread -lcrypt -ldl -Wl,--export-dynamic
+LIBS := -lz -lpthread -lcrypt -lhttp_parser -ldl -Wl,--export-dynamic
 LIBS += ${shell ${PYTHON_CONFIG} --ldflags}
 
 # SleeperMUD core source files
