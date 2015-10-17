@@ -19,10 +19,10 @@ const double MODULE_VERSION    = 1.0;
 
 void doTest(char *info) {
   SOCKET_DATA *sock = NULL;
-  hookParseInfo(info, &sock);
+  hookParseInfo(info, &socket);
   //  char *cmd = listPop(sock->input);
-  char * uid = socketGetBuf(sock);
-  log_string("%s", uid);
+  int uid = socketGetUID(sock);
+  log_string("%d", uid);
 }
 
 void init_websockets() {
