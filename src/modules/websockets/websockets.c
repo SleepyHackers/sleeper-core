@@ -10,7 +10,7 @@
 #include "hooks.h"
 #include "event.h"
 #include "inform.h"
-#include "base64.h"
+#include "util.h"
 
 #include "websockets.h"
 
@@ -110,12 +110,11 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       ch = strtok(ch, ": ");
       ch = strtok(NULL, ": ");
       size_t len = strlen(ch);
-      uint8_t *dest = (uint8_t)malloc(sizeof(uint8_t)*len);
+      char* dest = malloc(len);
 
 
-      base64_decode(ch, len, &dest);
-
-           log_string("%l",  dest);
+      b64decode(ch, dest, len);
+      log_string("%l",  dest);
       log_string("FOUNDIT!!!!!!!!!!!!!!!!!!!!!!!!");
       break;
     }

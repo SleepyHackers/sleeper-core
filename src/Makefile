@@ -100,7 +100,7 @@ ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c
 	@mv ${notdir $@} ${OBJ_DIR}
 
 modules:
-	@${foreach module,${MODULES2},/bin/bash -c "cd ${MODULE_DIR}/${module} && make && cd ..";}
+	@${foreach module,${MODULES2},/bin/bash -c "cd ${MODULE_DIR}/${module} && CC=\"${CC}\" CFLAGS=\"${CFLAGS}\" LIBS=\"${LIBS}\" make && cd ..";}
 
 #For compiling as module
 as-module: ${DEPS} ${O_FILES}

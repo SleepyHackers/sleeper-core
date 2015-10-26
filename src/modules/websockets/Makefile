@@ -1,5 +1,7 @@
-SRC   := websockets.c base64.c
+SRC   := websockets.c util.c
 OUT   := websockets.so
+CFLAGS += -Ilibb64
+LDFLAGS += -L./ -lb64
 
 # * End config * #
 

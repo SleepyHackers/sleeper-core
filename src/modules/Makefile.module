@@ -3,8 +3,8 @@ OBJS := ${patsubst %.c,%.o,${filter %.c, ${SRC}}}
 OUT := ${ROOT}/lib/modules/${OUT}
 
 %.o: %.c
-	gcc -ggdb -I${ROOT}/src/include -c -fpic $<
+	${CC} ${CFLAGS} -I${ROOT}/src/include -c -fpic $<
 all: ${OBJS}
-	gcc -ggdb -shared -o ${OUT} *.o
+	${CC} ${CFLAGS} -shared -o ${OUT} *.o ${LDFLAGS}
 syms:
 	@objdump -e ${OUT} -TS
