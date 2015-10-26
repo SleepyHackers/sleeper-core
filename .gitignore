@@ -9,3 +9,5 @@ lib/world/world
 core
 lib/
 log/
+\#*
+.\#*
