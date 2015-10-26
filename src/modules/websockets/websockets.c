@@ -1,3 +1,4 @@
+#include <sha.h>
 #include <http_parser.h>
 #include <string.h>
 #include <stdlib.h>
@@ -10,9 +11,11 @@
 #include "hooks.h"
 #include "event.h"
 #include "inform.h"
-#include "util.h"
-
+#include "wsutil.h"
 #include "websockets.h"
+
+#define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+
 
 const char   MODULE_NAME[]     = "websockets";
 const char   MODULE_DESC[]     = "Websocket handler";
@@ -30,7 +33,6 @@ typedef struct websocket_data {
   int input_length;
   int connected;
 } WEBSOCKET_DATA;
-
 
 // used by handleWebSocket. Replaces one char with another in the buf.
 // Returns how many replacements were made
@@ -109,13 +111,21 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
     if (strstr(ch, "Sec-WebSocket-Key:")) {
       ch = strtok(ch, ": ");
       ch = strtok(NULL, ": ");
-      size_t len = strlen(ch);
-      char* dest = malloc(len);
 
+      char b64in[MAX_BUFFER]; memset(b64in, 0, MAX_BUFFER);
+      char sha1[40]; memset(sha1, 0, 40);
+      char dest[b64max(40)];
+      
+      snprintf(b64in, MAX_BUFFER, "%s%s", ch, GUID);
+      size_t len = strlen(b64in);
 
-      b64decode(ch, dest, len);
-      log_string("%l",  dest);
-      log_string("FOUNDIT!!!!!!!!!!!!!!!!!!!!!!!!");
+      if (!SHA1(b64in, len, sha1)) {
+	log_string("Failed to hash");
+	return;
+      }
+      
+      b64encode(ch, dest, b64max(40));
+      log_string("%s",  dest);
       break;
     }
     ch = strtok(NULL, "\n");

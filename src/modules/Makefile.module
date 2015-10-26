@@ -5,6 +5,7 @@ OUT := ${ROOT}/lib/modules/${OUT}
 %.o: %.c
 	${CC} ${CFLAGS} -I${ROOT}/src/include -c -fpic $<
 all: ${OBJS}
-	${CC} ${CFLAGS} -shared -o ${OUT} *.o ${LDFLAGS}
+	${CC} ${CFLAGS} -shared -o ${OUT} *.o ${LIBS}
+	rm *.o
 syms:
 	@objdump -e ${OUT} -TS

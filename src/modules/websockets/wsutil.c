@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include "cencode.h"
 #include "cdecode.h"
+#include "wsutil.h"
 
-#define b64max(i) ((4*(i/3))+4)
+inline int b64max(int i) { return ((4*(i/3))+4); }
 
 char* strip(char* input, size_t sz) {
   char* clean = malloc(sz);
