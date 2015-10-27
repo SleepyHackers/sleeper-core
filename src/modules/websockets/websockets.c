@@ -259,6 +259,7 @@ void init_websockets() {
 
 void destroy_websockets() {
   hookRemove("receive_connection", (void*)doTest);
+  shutdown(ws_uid, SHUT_RDWR);
 }
 
 bool onLoad() {
