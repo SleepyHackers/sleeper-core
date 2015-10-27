@@ -260,6 +260,13 @@ void init_websockets() {
 void destroy_websockets() {
   hookRemove("receive_connection", (void*)doTest);
   shutdown(ws_uid, SHUT_RDWR);
+  WEBSOCKET_DATA  *conn = NULL;
+  LIST_ITERATOR *conn_i = newListIterator(ws_descs);
+  ITERATE_LIST(conn, conn_i) {
+    closeWebSocket(conn);
+    listRemove(ws_descs, conn);
+    deleteWebSocket(conn);
+  } deleteListIterator(conn_i);
 }
 
 bool onLoad() {
