@@ -104,17 +104,18 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
   char b64in[MAX_BUFFER]; memset(b64in, 0, MAX_BUFFER);
   char sha1[40]; memset(sha1, 0, 40);
   char dest[b64max(40)];
+  char *cSave;
   
   // clear everything
   *get = *key = '\0';
 
-  char *ch = strtok(sock->input_buf, "\n");
+  char *ch = strtok_r(sock->input_buf, "\n", &cSave);
   while (ch != NULL) {
     log_string("%s", ch);
 
     if (strstr(ch, "Sec-WebSocket-Key:")) {
-      ch = strtok(ch, ": ");
-      ch = strtok(NULL, ": ");
+      ch = strtok_r(ch, ": ", &cSave);
+      ch = strtok_r(NULL, ": ", &cSave);
 
       snprintf(b64in, MAX_BUFFER, "%s%s", ch, GUID);
       size_t len = strlen(b64in);
@@ -127,11 +128,10 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       b64encode(ch, dest, b64max(40));
       break;
     }
-    ch = strtok(NULL, "\n");
+    ch = strtok_r(NULL, "\n", &cSave);
 
   }
 
-  
   if(sock->connected != 1) {
     bprintf(buf, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\nUpgrade: websocket\r\n\r\n", dest);
     sock->connected = 1;
