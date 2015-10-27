@@ -95,74 +95,58 @@ void bufferASCIIHTML(BUFFER *buf) {
 }
 
 void handleWebSocket(WEBSOCKET_DATA *sock) {
-  static char get[SMALL_BUFFER];
-  static char key[SMALL_BUFFER];
-  char    *argstr = NULL;
   BUFFER     *buf = newBuffer(MAX_BUFFER);
-  //  HASHTABLE *args = newHashtable();
 
   char b64in[MAX_BUFFER]; memset(b64in, 0, MAX_BUFFER);
   char sha1[40]; memset(sha1, 0, 40);
   char dest[b64max(40)];
-  char *cSave, *cTok;
-  
-  // clear everything
-  *get = *key = '\0';
+  char *cSave, *cTok, *ch;
 
-  char *ch = strtok_r(sock->input_buf, "\n", &cSave);
-  while (ch != NULL) {
-    //log_string("%s", ch);
+  /* Are we connected yet? If not attempt a handshake */
+  if(sock->connected != 1) {
 
-    if (strstr(ch, "Sec-WebSocket-Key:")) {
-      cTok = strtok_r(ch, ": ", &cSave);
-      cTok = strtok_r(NULL, ": ", &cSave);
+    /* Did we roughly get a valid header? */
+    if( ( strstr(sock->input_buf, "HTTP/1.") && strstr(sock->input_buf, "\r\n\r\n")) ||
+	(!strstr(sock->input_buf, "HTTP/1.") && strstr(sock->input_buf, "\n"))) {
 
-      cTok[strlen(cTok)-1] = '\0';
-
-      snprintf(b64in, MAX_BUFFER, "%s%s", cTok, GUID);
-      size_t len = strlen(b64in);
-
-       log_string("%s", b64in);
-
-      if (!SHA1(b64in, len, sha1)) {
-	log_string("Failed to hash");
-	return;
+      ch = strtok_r(sock->input_buf, "\n", &cSave);
+      while (ch != NULL) {
+	//log_string("%s", ch);
+	
+	if (strstr(ch, "Sec-WebSocket-Key:")) {
+	  cTok = strtok_r(ch, ": ", &cSave);
+	  cTok = strtok_r(NULL, ": ", &cSave);
+	  
+	  cTok[strlen(cTok)-1] = '\0';
+	  
+	  snprintf(b64in, MAX_BUFFER, "%s%s", cTok, GUID);
+	  size_t len = strlen(b64in);
+	  
+	  if (!SHA1(b64in, len, sha1)) {
+	    log_string("Failed to hash");
+	    return;
+	  }
+	  
+	  b64encode(sha1, dest, b64max(40));
+	  break;
+	}
+	ch = strtok_r(NULL, "\n", &cSave);
+	
       }
       
-      b64encode(sha1, dest, b64max(40));
-      break;
+      bprintf(buf, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\nUpgrade: websocket\r\n\r\n", dest);
+      sock->connected = 1;
+      //    log_string("%s", bufferString(buf));
+      
+      // send out the buf contents
+      send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
     }
-    ch = strtok_r(NULL, "\n", &cSave);
-
   }
-
-  if(sock->connected != 1) {
-    bprintf(buf, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\nUpgrade: websocket\r\n\r\n", dest);
-    sock->connected = 1;
-    //    log_string("%s", bufferString(buf));
-
-    // send out the buf contents
-    send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
-
-  }     
-  
-
 
   // clean up our mess
   deleteBuffer(buf);
-  /*  deleteBuffer(buf);
-  if(argstr) free(argstr);
-  if(hashSize(args) > 0) {
-    const char    *h_key = NULL;
-    char          *h_val = NULL;
-    HASH_ITERATOR *arg_i = newHashIterator(args);
-    ITERATE_HASH(h_key, h_val, arg_i) {
-      free(h_val);
-    } deleteHashIterator(arg_i);
-  } 
-  deleteHashtable(args); */
-}
 
+}
 
 void websockets_loop(void *owner, void *data, char *arg) {
   WEBSOCKET_DATA  *conn = NULL;
@@ -215,13 +199,10 @@ void websockets_loop(void *owner, void *data, char *arg) {
   ITERATE_LIST(conn, conn_i) {
     // which version are we dealing with, and do we have a request terminator?
     // If we haven't gotten the terminator yet, don't handle or close the socket
-    if( ( strstr(conn->input_buf, "HTTP/1.") && strstr(conn->input_buf, "\r\n\r\n")) ||
-	(!strstr(conn->input_buf, "HTTP/1.") && strstr(conn->input_buf, "\n"))) {
            handleWebSocket(conn);
 	   /*	           closeWebSocket(conn);
             listRemove(ws_descs, conn);
             deleteWebSocket(conn);*/
-    }
   } deleteListIterator(conn_i);
 }
 
@@ -259,10 +240,6 @@ void init_websockets() {
   ws_descs   = newList();
   //  query_table = newHashtable();
   start_update(0xA, 0.1 SECOND, websockets_loop, NULL, NULL, NULL);
-  
-  // set up our basic queries
-  //  add_query("who", build_who_html);
-  
 }
 
 void destroy_websockets() {
