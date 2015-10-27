@@ -99,7 +99,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
   static char key[SMALL_BUFFER];
   char    *argstr = NULL;
   BUFFER     *buf = newBuffer(MAX_BUFFER);
-  HASHTABLE *args = newHashtable();
+  //  HASHTABLE *args = newHashtable();
 
   char b64in[MAX_BUFFER]; memset(b64in, 0, MAX_BUFFER);
   char sha1[40]; memset(sha1, 0, 40);
@@ -122,7 +122,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       snprintf(b64in, MAX_BUFFER, "%s%s", cTok, GUID);
       size_t len = strlen(b64in);
 
-      //log_string("%s", b64in);
+       log_string("%s", b64in);
 
       if (!SHA1(b64in, len, sha1)) {
 	log_string("Failed to hash");
@@ -200,9 +200,10 @@ void websockets_loop(void *owner, void *data, char *arg) {
       if(in_len > 0) {
 	conn->input_length += in_len;
 	conn->input_buf[conn->input_length] = '\0';
+	log_string("%s", conn->input_buf);
       }
       else if(in_len < 0) {
-		closeWebSocket(conn);
+	closeWebSocket(conn);
 	listRemove(ws_descs, conn);
 	deleteWebSocket(conn);
       }
@@ -265,8 +266,7 @@ void init_websockets() {
 }
 
 void destroy_websockets() {
-  hookRemove("receive_connection", (void*)doTest);
-  shutdown(ws_uid, SHUT_RDWR);
+  //  hookRemove("receive_connection", (void*)doTest);
   WEBSOCKET_DATA  *conn = NULL;
   LIST_ITERATOR *conn_i = newListIterator(ws_descs);
   ITERATE_LIST(conn, conn_i) {
@@ -275,6 +275,7 @@ void destroy_websockets() {
     deleteWebSocket(conn);
   } deleteListIterator(conn_i);
   interrupt_events_involving(0xA);
+  shutdown(ws_uid, SHUT_RDWR);
 }
 
 bool onLoad() {
