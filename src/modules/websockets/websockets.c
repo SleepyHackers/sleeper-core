@@ -257,8 +257,8 @@ void init_websockets() {
   // set up our list of connected sockets, and get the updater rolling
   ws_descs   = newList();
   //  query_table = newHashtable();
-  start_update(NULL, 0.1 SECOND, websockets_loop, NULL, NULL, NULL);
-
+  start_update(0xA, 0.1 SECOND, websockets_loop, NULL, NULL, NULL);
+  
   // set up our basic queries
   //  add_query("who", build_who_html);
   
@@ -274,6 +274,7 @@ void destroy_websockets() {
     listRemove(ws_descs, conn);
     deleteWebSocket(conn);
   } deleteListIterator(conn_i);
+  interrupt_events_involving(0xA);
 }
 
 bool onLoad() {
