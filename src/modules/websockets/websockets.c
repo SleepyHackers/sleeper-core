@@ -104,7 +104,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
   char b64in[MAX_BUFFER]; memset(b64in, 0, MAX_BUFFER);
   char sha1[40]; memset(sha1, 0, 40);
   char dest[b64max(40)];
-  char *cSave;
+  char *cSave, *cTok;
   
   // clear everything
   *get = *key = '\0';
@@ -114,18 +114,22 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
     log_string("%s", ch);
 
     if (strstr(ch, "Sec-WebSocket-Key:")) {
-      ch = strtok_r(ch, ": ", &cSave);
-      ch = strtok_r(NULL, ": ", &cSave);
+      cTok = strtok_r(ch, ": ", &cSave);
+      cTok = strtok_r(NULL, ": ", &cSave);
 
-      snprintf(b64in, MAX_BUFFER, "%s%s", ch, GUID);
+      cTok[strlen(cTok)-1] = '\0';
+
+      snprintf(b64in, MAX_BUFFER, "%s%s", cTok, GUID);
       size_t len = strlen(b64in);
+
+      log_string("%s", b64in);
 
       if (!SHA1(b64in, len, sha1)) {
 	log_string("Failed to hash");
 	return;
       }
       
-      b64encode(ch, dest, b64max(40));
+      b64encode(sha1, dest, b64max(40));
       break;
     }
     ch = strtok_r(NULL, "\n", &cSave);
