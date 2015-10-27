@@ -101,6 +101,10 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
   BUFFER     *buf = newBuffer(MAX_BUFFER);
   HASHTABLE *args = newHashtable();
 
+  char b64in[MAX_BUFFER]; memset(b64in, 0, MAX_BUFFER);
+  char sha1[40]; memset(sha1, 0, 40);
+  char dest[b64max(40)];
+  
   // clear everything
   *get = *key = '\0';
 
@@ -112,10 +116,6 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       ch = strtok(ch, ": ");
       ch = strtok(NULL, ": ");
 
-      char b64in[MAX_BUFFER]; memset(b64in, 0, MAX_BUFFER);
-      char sha1[40]; memset(sha1, 0, 40);
-      char dest[b64max(40)];
-      
       snprintf(b64in, MAX_BUFFER, "%s%s", ch, GUID);
       size_t len = strlen(b64in);
 
@@ -125,7 +125,6 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       }
       
       b64encode(ch, dest, b64max(40));
-      log_string("%s",  dest);
       break;
     }
     ch = strtok(NULL, "\n");
@@ -133,75 +132,12 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
   }
 
   
-  // parse our key
-  two_args(sock->input_buf, get, key);
-
-  // replace the arg separator with a space, and then one_arg out the arguments
-  if(replace_char(key, '?', ' '))
-    argstr = strdup(one_arg(key+1, key));
-  else
-    one_arg(key+1, key);
-
-  // parse out our argument string
-  if(argstr != NULL) {
-    char one_pair[SMALL_BUFFER];
-    char  one_key[SMALL_BUFFER];
-    char  one_val[SMALL_BUFFER];
-    char *leftover = argstr;
-
-    // separate all of our key:val pairs by spaces so we can one_arg them
-    replace_char(argstr, '&', ' ');
-
-    do {
-      // clear our buffers
-      *one_pair = *one_key = *one_val = '\0';
-
-      // parse out a pair, and replace the assigner
-      // with a space so we can two_args them apart
-      leftover = one_arg(leftover, one_pair);
-      replace_char(one_pair, '=', ' ');
-      two_args(one_pair, one_key, one_val);
-
-
-      // see if we need to put in the new key:val pair
-      if(*one_key && *one_val && !hashIn(args, one_key))
-	hashPut(args, one_key, strdup(one_val));
-    } while(*leftover != '\0');
-  }
-
-  // find our function
-  //  BUFFER *(* func)(HASHTABLE *args) = hashGet(query_table, key);
-  BUFFER                   *content = NULL;
-
-  // call it if it exists NASTY HACK TO MAKE IT GO
-  //  if(func == NULL || (content = func(args)) == NULL)
-
-      
   if(sock->connected != 1) {
-    bprintf(buf, "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n");
+    bprintf(buf, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\nUpgrade: websocket\r\n\r\n", dest);
     sock->connected = 1;
-        log_string("OMG TEST ");
+    log_string("%s", bufferString(buf));
 
   }
-  else if(1){
-    bprintf(buf, "lolwut\r\n");
-  }  else if(0) {
-    // replace all of the colors and returns in the buf
-    bufferASCIIHTML(content);
-
-    // generate the output, with all of its required tags
-    bprintf(buf,
-	                "<html><body bgcolor=\"black\" text=\"green\">"
-	                "<font face=\"courier\">"
-	                "%s"
-	                "</font>"
-	    "</body></html>", bufferString(content));
-  }
-
-  // if we had content, delete it now
-  if(content != NULL)
-    deleteBuffer(content);
-
   // send out the buf contents
   send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
 
@@ -274,9 +210,9 @@ void websockets_loop(void *owner, void *data, char *arg) {
     if( ( strstr(conn->input_buf, "HTTP/1.") && strstr(conn->input_buf, "\r\n\r\n")) ||
 	(!strstr(conn->input_buf, "HTTP/1.") && strstr(conn->input_buf, "\n"))) {
            handleWebSocket(conn);
-	           closeWebSocket(conn);
+	   /*	           closeWebSocket(conn);
             listRemove(ws_descs, conn);
-            deleteWebSocket(conn);
+            deleteWebSocket(conn);*/
     }
   } deleteListIterator(conn_i);
 }
