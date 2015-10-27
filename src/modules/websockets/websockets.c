@@ -111,7 +111,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 
   char *ch = strtok_r(sock->input_buf, "\n", &cSave);
   while (ch != NULL) {
-    log_string("%s", ch);
+    //log_string("%s", ch);
 
     if (strstr(ch, "Sec-WebSocket-Key:")) {
       cTok = strtok_r(ch, ": ", &cSave);
@@ -122,7 +122,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       snprintf(b64in, MAX_BUFFER, "%s%s", cTok, GUID);
       size_t len = strlen(b64in);
 
-      log_string("%s", b64in);
+      //log_string("%s", b64in);
 
       if (!SHA1(b64in, len, sha1)) {
 	log_string("Failed to hash");
@@ -139,11 +139,14 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
   if(sock->connected != 1) {
     bprintf(buf, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\nUpgrade: websocket\r\n\r\n", dest);
     sock->connected = 1;
-    log_string("%s", bufferString(buf));
+    //    log_string("%s", bufferString(buf));
 
-  }
-  // send out the buf contents
-  send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
+    // send out the buf contents
+    send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
+
+  }     
+  
+
 
   // clean up our mess
   deleteBuffer(buf);
