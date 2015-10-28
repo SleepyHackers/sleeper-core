@@ -111,8 +111,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 
       ch = strtok_r(sock->input_buf, "\n", &cSave);
       while (ch != NULL) {
-	//log_string("%s", ch);
-	
+		
 	if (strstr(ch, "Sec-WebSocket-Key:")) {
 	  cTok = strtok_r(ch, ": ", &cSave);
 	  cTok = strtok_r(NULL, ": ", &cSave);
@@ -136,7 +135,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       
       bprintf(buf, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\nUpgrade: websocket\r\n\r\n", dest);
       sock->connected = 1;
-      //    log_string("%s", bufferString(buf));
+      log_string("New websocket, uid: $d connected.", sock->uid);
       
       // send out the buf contents
       send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
@@ -184,7 +183,6 @@ void websockets_loop(void *owner, void *data, char *arg) {
       if(in_len > 0) {
 	conn->input_length += in_len;
 	conn->input_buf[conn->input_length] = '\0';
-	log_string("%s", conn->input_buf);
       }
       else if(in_len < 0) {
 	closeWebSocket(conn);
