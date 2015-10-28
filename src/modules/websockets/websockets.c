@@ -196,7 +196,6 @@ void websockets_loop(void *owner, void *data, char *arg) {
 	conn->input_buf[conn->input_length] = '\0';
       }
       else if(in_len < 0) {
-	conn->input_buf[0] = '\0';
 	/*	closeWebSocket(conn);
 	listRemove(ws_descs, conn);
 	deleteWebSocket(conn);*/
@@ -208,7 +207,6 @@ void websockets_loop(void *owner, void *data, char *arg) {
   conn_i = newListIterator(ws_descs);
   ITERATE_LIST(conn, conn_i) {
     handleWebSocket(conn);
-    conn->input_buf[0] = '\0';
 	   /*	           closeWebSocket(conn);
             listRemove(ws_descs, conn);
             deleteWebSocket(conn);*/
