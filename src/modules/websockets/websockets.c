@@ -104,12 +104,14 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 
   /* Are we connected yet? If not attempt a handshake */
   if(sock->connected != 1) {
+    log_string("new websocket, %d, attempting to connect", sock->uid);
 
     /* Did we roughly get a valid header? */
     if( ( strstr(sock->input_buf, "HTTP/1.") && strstr(sock->input_buf, "\r\n\r\n")) ||
 	(!strstr(sock->input_buf, "HTTP/1.") && strstr(sock->input_buf, "\n"))) {
 
-      ch = strtok_r(sock->input_buf, "\n", &cSave);
+      ch = sock->input_buf;
+      ch = strtok_r(ch, "\n", &cSave);
       while (ch != NULL) {
 		
 	if (strstr(ch, "Sec-WebSocket-Key:")) {
@@ -122,26 +124,35 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 	  size_t len = strlen(b64in);
 	  
 	  if (!SHA1(b64in, len, sha1)) {
-	    log_string("Failed to hash");
+	    log_string("ERROR: websocket, %s, sha1() failed", sock->uid);
 	    return;
 	  }
 	  
 	  b64encode(sha1, dest, b64max(40));
+
+	  /* Confirm websocket handshake was sent */
+	  sock->connected = 1;
 	  break;
 	}
 	ch = strtok_r(NULL, "\n", &cSave);
-	
       }
       
       bprintf(buf, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\nUpgrade: websocket\r\n\r\n", dest);
-      sock->connected = 1;
-      log_string("New websocket, uid: $d connected.", sock->uid);
       
       // send out the buf contents
       send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
     }
-  }
+  } else {
 
+    /* We are connected, check the input buffer for commands, */
+
+    if(strstr(sock->input_buf, "ping")) {
+      bprintf(buf, "pong: %i", sock->uid);
+      send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
+      log_string("%s", sock->input_buf);
+
+    }
+  }
   // clean up our mess
   deleteBuffer(buf);
 
@@ -185,9 +196,10 @@ void websockets_loop(void *owner, void *data, char *arg) {
 	conn->input_buf[conn->input_length] = '\0';
       }
       else if(in_len < 0) {
-	closeWebSocket(conn);
+	conn->input_buf[0] = '\0';
+	/*	closeWebSocket(conn);
 	listRemove(ws_descs, conn);
-	deleteWebSocket(conn);
+	deleteWebSocket(conn);*/
       }
     }
   } deleteListIterator(conn_i);
@@ -195,9 +207,8 @@ void websockets_loop(void *owner, void *data, char *arg) {
   // do output handling
   conn_i = newListIterator(ws_descs);
   ITERATE_LIST(conn, conn_i) {
-    // which version are we dealing with, and do we have a request terminator?
-    // If we haven't gotten the terminator yet, don't handle or close the socket
-           handleWebSocket(conn);
+    handleWebSocket(conn);
+    conn->input_buf[0] = '\0';
 	   /*	           closeWebSocket(conn);
             listRemove(ws_descs, conn);
             deleteWebSocket(conn);*/
