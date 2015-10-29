@@ -72,13 +72,11 @@ WEBSOCKET_DATA *newWebSocket() {
 
 
 void deleteWebSocket(WEBSOCKET_DATA *wsock) {
+
   free(wsock);
 }
 
 void closeWebSocket(WEBSOCKET_DATA *wsock) {
-  wsock->die = 1;
-  /* Wait for socket to die */
-  int ret_val = pthread_join(wsock->thread, NULL);
   close(wsock->uid);
 }
 
@@ -176,8 +174,9 @@ void websockets_loop(WEBSOCKET_DATA  *conn) {
   struct timeval tv = { 0, 0 }; // we don't wait for any action.
   fd_set read_fd;
   int peek = 0;
-  
+
   while ( conn->die == 0 ) {
+    usleep(5000);
     //int in_len = recv (conn->uid, &conn->input_buf, MAX_INPUT_LEN, NULL);
     // get our sets all done up
     
@@ -282,9 +281,16 @@ void destroy_websockets() {
   //  hookRemove("receive_connection", (void*)doTest);
   WEBSOCKET_DATA  *conn = NULL;
   LIST_ITERATOR *conn_i = newListIterator(ws_descs);
+
   ITERATE_LIST(conn, conn_i) {
     closeWebSocket(conn);
     listRemove(ws_descs, conn);
+    conn->die = 1;
+    
+    /* Wait for socket to die */
+    pthread_join(conn->thread, NULL);
+    log_string("Killed socket %d", conn->uid);
+
     deleteWebSocket(conn);
   } deleteListIterator(conn_i);
   interrupt_events_involving(0xA);
