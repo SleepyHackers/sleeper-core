@@ -2,6 +2,8 @@
 #include <http_parser.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
+
 #include "mud.h"
 #include "character.h"
 #include "utils.h"
@@ -137,7 +139,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 	ch = strtok_r(NULL, "\n", &cSave);
       }
       
-      bprintf(buf, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\nUpgrade: websocket\r\n\r\n", dest);
+      bprintf(buf, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\nUpgrade: websocket\r\nSec-WebSocket-Protocol: chat\r\n\r\n", dest);
       
       // send out the buf contents
       send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
@@ -145,11 +147,12 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
   } else {
 
     /* We are connected, check the input buffer for commands, */
+	log_string("%x", sock->input_buf);
 
     if(strstr(sock->input_buf, "ping")) {
-      bprintf(buf, "pong: %i", sock->uid);
+      bprintf(buf, "pong: %i\r\n", sock->uid);
       send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
-      log_string("%s", sock->input_buf);
+      log_string("%x", sock->input_buf);
 
     }
   }
@@ -158,9 +161,36 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 
 }
 
-void websockets_loop(void *owner, void *data, char *arg) {
+void websockets_loop(WEBSOCKET_DATA  *conn) {
+
+    //int in_len = recv (conn->uid, &conn->input_buf, MAX_INPUT_LEN, NULL);
+    int in_len = read(conn->uid, conn->input_buf + conn->input_length,
+		      MAX_INPUT_LEN - conn->input_length - 1);
+    log_string("length/ret: %i", in_len);
+        log_string("length/ret: %x", conn->input_buf);
+    if(in_len > 0) {
+      conn->input_length += in_len;
+      conn->input_buf[conn->input_length] = '\0';
+    }
+    else if(in_len < 0) {
+      closeWebSocket(conn);
+      listRemove(ws_descs, conn);
+      deleteWebSocket(conn);
+    }
+
+
+  handleWebSocket(conn);
+
+  pthread_exit(0);
+
+}
+
+void websockets_process(void *owner, void *data, char *arg) {
   WEBSOCKET_DATA  *conn = NULL;
-  struct timeval tv = { 0, 0 }; // we don't wait for any action.
+  pthread_attr_t       attr;
+  pthread_t            thread_lookup;
+
+    struct timeval tv = { 0, 0 }; // we don't wait for any action.
   fd_set read_fd;
 
 
@@ -180,36 +210,18 @@ void websockets_loop(void *owner, void *data, char *arg) {
     if((conn->uid = accept(ws_uid, (struct sockaddr *)&conn->stAddr,
 			       &socksize)) > 0) {
       listQueue(ws_descs, conn);
-      FD_SET(conn->uid, &read_fd);
     }
   }
-
-
-  // do input handling
   LIST_ITERATOR *conn_i = newListIterator(ws_descs);
   ITERATE_LIST(conn, conn_i) {
-    if(FD_ISSET(conn->uid, &read_fd)) {
-      int in_len = read(conn->uid, conn->input_buf + conn->input_length,
-			MAX_INPUT_LEN - conn->input_length - 1);
-      if(in_len > 0) {
-	conn->input_length += in_len;
-	conn->input_buf[conn->input_length] = '\0';
-      }
-      else if(in_len < 0) {
-	/*	closeWebSocket(conn);
-	listRemove(ws_descs, conn);
-	deleteWebSocket(conn);*/
-      }
-    }
-  } deleteListIterator(conn_i);
 
-  // do output handling
-  conn_i = newListIterator(ws_descs);
-  ITERATE_LIST(conn, conn_i) {
-    handleWebSocket(conn);
-	   /*	           closeWebSocket(conn);
-            listRemove(ws_descs, conn);
-            deleteWebSocket(conn);*/
+    pthread_attr_init(&attr);   
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
+    pthread_create(&thread_lookup, &attr, &websockets_loop, (void*) conn);
+    /*	           closeWebSocket(conn);
+		   listRemove(ws_descs, conn);
+		   deleteWebSocket(conn);*/
   } deleteListIterator(conn_i);
 }
 
@@ -246,7 +258,7 @@ void init_websockets() {
   // set up our list of connected sockets, and get the updater rolling
   ws_descs   = newList();
   //  query_table = newHashtable();
-  start_update(0xA, 0.1 SECOND, websockets_loop, NULL, NULL, NULL);
+  start_update(0xA, 0.1 SECOND, websockets_process, NULL, NULL, NULL);
 }
 
 void destroy_websockets() {
