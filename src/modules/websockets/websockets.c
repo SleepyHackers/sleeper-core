@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <linux/ioctl.h>
+#include <asm-generic/ioctls.h>
 
 #include "mud.h"
 #include "character.h"
@@ -34,6 +36,8 @@ typedef struct websocket_data {
   char input_buf[MAX_INPUT_LEN];
   int input_length;
   int connected;
+  int die;
+  pthread_t thread;
 } WEBSOCKET_DATA;
 
 // used by handleWebSocket. Replaces one char with another in the buf.
@@ -61,6 +65,8 @@ void doTest(char *info) {
 
 WEBSOCKET_DATA *newWebSocket() {
   WEBSOCKET_DATA *wsock = calloc(1, sizeof(WEBSOCKET_DATA));
+  wsock->die = 0;
+  wsock->connected = 0;
   return wsock;
 }
 
@@ -70,6 +76,9 @@ void deleteWebSocket(WEBSOCKET_DATA *wsock) {
 }
 
 void closeWebSocket(WEBSOCKET_DATA *wsock) {
+  wsock->die = 1;
+  /* Wait for socket to die */
+  int ret_val = pthread_join(wsock->thread, NULL);
   close(wsock->uid);
 }
 
@@ -147,7 +156,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
   } else {
 
     /* We are connected, check the input buffer for commands, */
-	log_string("%x", sock->input_buf);
+    log_string("%d", sock->input_buf[0]);
 
     if(strstr(sock->input_buf, "ping")) {
       bprintf(buf, "pong: %i\r\n", sock->uid);
@@ -155,6 +164,8 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       log_string("%x", sock->input_buf);
 
     }
+    sock->input_buf[0] = '\0';
+    sock->input_length = 0;
   }
   // clean up our mess
   deleteBuffer(buf);
@@ -162,24 +173,36 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 }
 
 void websockets_loop(WEBSOCKET_DATA  *conn) {
-
+  struct timeval tv = { 0, 0 }; // we don't wait for any action.
+  fd_set read_fd;
+  int peek = 0;
+  
+  while ( conn->die == 0 ) {
     //int in_len = recv (conn->uid, &conn->input_buf, MAX_INPUT_LEN, NULL);
-    int in_len = read(conn->uid, conn->input_buf + conn->input_length,
-		      MAX_INPUT_LEN - conn->input_length - 1);
-    log_string("length/ret: %i", in_len);
-        log_string("length/ret: %x", conn->input_buf);
-    if(in_len > 0) {
-      conn->input_length += in_len;
-      conn->input_buf[conn->input_length] = '\0';
+    // get our sets all done up
+    
+    ioctl(conn->uid, FIONREAD, &peek);
+    if(peek > 0) {
+      int in_len = read(conn->uid, conn->input_buf + conn->input_length,
+			MAX_INPUT_LEN - conn->input_length - 1);
+      log_string("length/ret: %i", in_len);
+      log_string("length/ret: %x", conn->input_buf);
+      if(in_len > 0) {
+	conn->input_length += in_len;
+	conn->input_buf[conn->input_length] = '\0';
+      }
+      else if(in_len <= 0) {
+	closeWebSocket(conn);
+	listRemove(ws_descs, conn);
+	deleteWebSocket(conn);
+	pthread_exit(0);
+	return;
+      }
+      
+      
+      handleWebSocket(conn);
     }
-    else if(in_len < 0) {
-      closeWebSocket(conn);
-      listRemove(ws_descs, conn);
-      deleteWebSocket(conn);
-    }
-
-
-  handleWebSocket(conn);
+  }
 
   pthread_exit(0);
 
@@ -210,19 +233,13 @@ void websockets_process(void *owner, void *data, char *arg) {
     if((conn->uid = accept(ws_uid, (struct sockaddr *)&conn->stAddr,
 			       &socksize)) > 0) {
       listQueue(ws_descs, conn);
+          pthread_attr_init(&attr);   
+	  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
+	  pthread_create(&thread_lookup, &attr, &websockets_loop, (void*) conn);
+	  conn->thread = thread_lookup;
     }
   }
-  LIST_ITERATOR *conn_i = newListIterator(ws_descs);
-  ITERATE_LIST(conn, conn_i) {
-
-    pthread_attr_init(&attr);   
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-
-    pthread_create(&thread_lookup, &attr, &websockets_loop, (void*) conn);
-    /*	           closeWebSocket(conn);
-		   listRemove(ws_descs, conn);
-		   deleteWebSocket(conn);*/
-  } deleteListIterator(conn_i);
 }
 
 
