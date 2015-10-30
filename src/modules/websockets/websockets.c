@@ -29,8 +29,6 @@
 #define WS_EXLEN   16
 #define WS_MASK    16
 
-
-
 const char   MODULE_NAME[]     = "websockets";
 const char   MODULE_DESC[]     = "Websocket handler";
 const char   MODULE_DEPENDS[]  = "";
@@ -225,16 +223,30 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 
     if(strstr(buffy, "ping")) {
       bprintf(buf, "pong: %i\r\n", sock->uid);
-      //      send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
+
       log_string("Got a ping from socket FD %i", sock->uid);
+      char msg[8];
+      memset(msg, 0, 8);
+      msg[0] = msg[0] | 1<<0;
+      msg[0] = msg[0] | 1<<7;
+      msg[1] = msg[1] | 1<<2;
+      msg[2] = 'p';
+      msg[3] = 'o';
+      msg[4] = 'n';
+      msg[5] = 'g';
+      msg[6] = '\0';
+      log_string("0x%2x 0x%2x 0x%2x 0x%2x", msg[0], msg[1], msg[2], msg[3]);
+
+      send(sock->uid, msg, strlen(msg), 0);
     }
     sock->input_buf[0] = '\0';
     sock->input_length = 0;
+    free(buffy);
+
   }
   // clean up our mess
 
   deleteBuffer(buf);
-  free(buffy);
 
 }
 
