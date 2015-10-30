@@ -19,6 +19,16 @@
 #include "websockets.h"
 
 #define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+#define WS_FIN     0
+#define WS_RSV1    1
+#define WS_RSV2    2
+#define WS_RSV3    3
+#define WS_OPCODE  4
+#define WS_MASK    8
+#define WS_LEN     9
+#define WS_EXLEN   16
+#define WS_MASK    16
+
 
 
 const char   MODULE_NAME[]     = "websockets";
@@ -109,8 +119,8 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
   char b64in[MAX_BUFFER]; memset(b64in, 0, MAX_BUFFER);
   char sha1[40]; memset(sha1, 0, 40);
   char dest[b64max(40)];
-  char *cSave, *cTok, *ch;
-
+  char *cSave, *cTok, *ch, swap;
+  int c, i;
   /* Are we connected yet? If not attempt a handshake */
   if(sock->connected != 1) {
     log_string("new websocket, %d, attempting to connect", sock->uid);
@@ -150,22 +160,79 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       
       // send out the buf contents
       send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
+      sock->input_buf[0] = '\0';
+      sock->input_length = 0;
     }
   } else {
+        /* We are connected, check the input buffer for commands, */
 
-    /* We are connected, check the input buffer for commands, */
-    log_string("%d", sock->input_buf[0]);
+    char *buffy = (char*)malloc(sizeof(char)*sock->input_length*8);
+    int bit, count=0;
+    
+    
+    buffy[0] = '\0';
+    
 
-    if(strstr(sock->input_buf, "ping")) {
+      /* Frame is as follows:
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-------+-+-------------+-------------------------------+
+     |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
+     |I|S|S|S|  (4)  |A|     (7)     |             (16/64)           |
+     |N|V|V|V|       |S|             |   (if payload len==126/127)   |
+     | |1|2|3|       |K|             |                               |
+     +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
+     |     Extended payload length continued, if payload len == 127  |
+     + - - - - - - - - - - - - - - - +-------------------------------+
+     |                               |Masking-key, if MASK set to 1  |
+     +-------------------------------+-------------------------------+
+     | Masking-key (continued)       |          Payload Data         |
+     +-------------------------------- - - - - - - - - - - - - - - - +
+     :                     Payload Data continued ...                :
+     + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
+     |                     Payload Data continued ...                |
+     +---------------------------------------------------------------+
+      */
+
+    char mask[4];
+    int m = 0, j = 0, n= 0;
+	  
+    for (c = 0; sock->input_buf[c] != '\0' ; c++) {
+      for (i = 7; i >= 0; --i) {
+	bit = (sock->input_buf[c] & (1 << i)) ? 1 : 0 ;
+	count++;
+
+      }
+      if(c >= 2  && c <= 5) {
+	mask[m] =  sock->input_buf[c];
+	m++;
+      }
+
+      if(c >= 6) {
+	j = n % 4;
+	buffy[n] = sock->input_buf[c] ^ mask[j];
+	n++;
+
+	
+	
+      }
+      
+    }
+    buffy[m] = '\0';
+
+    log_string("%s", buffy);
+
+    log_string("%i", sock->input_length);
+
+    if(strstr(buffy, "ping")) {
       bprintf(buf, "pong: %i\r\n", sock->uid);
-      send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
-      log_string("%x", sock->input_buf);
-
+      //      send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
+      log_string("Got a ping from socket FD %i", sock->uid);
     }
     sock->input_buf[0] = '\0';
     sock->input_length = 0;
   }
   // clean up our mess
+
   deleteBuffer(buf);
 
 }
@@ -184,8 +251,7 @@ void websockets_loop(WEBSOCKET_DATA  *conn) {
     if(peek > 0) {
       int in_len = read(conn->uid, conn->input_buf + conn->input_length,
 			MAX_INPUT_LEN - conn->input_length - 1);
-      log_string("length/ret: %i", in_len);
-      log_string("length/ret: %x", conn->input_buf);
+
       if(in_len > 0) {
 	conn->input_length += in_len;
 	conn->input_buf[conn->input_length] = '\0';
@@ -201,6 +267,7 @@ void websockets_loop(WEBSOCKET_DATA  *conn) {
       
       handleWebSocket(conn);
     }
+    
   }
 
   pthread_exit(0);
@@ -283,13 +350,15 @@ void destroy_websockets() {
   LIST_ITERATOR *conn_i = newListIterator(ws_descs);
 
   ITERATE_LIST(conn, conn_i) {
-    closeWebSocket(conn);
+
     listRemove(ws_descs, conn);
     conn->die = 1;
     
     /* Wait for socket to die */
     pthread_join(conn->thread, NULL);
     log_string("Killed socket %d", conn->uid);
+
+    closeWebSocket(conn);
 
     deleteWebSocket(conn);
   } deleteListIterator(conn_i);
