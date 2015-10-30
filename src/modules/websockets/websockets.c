@@ -234,6 +234,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
   // clean up our mess
 
   deleteBuffer(buf);
+  free(buffy);
 
 }
 
