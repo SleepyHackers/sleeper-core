@@ -217,7 +217,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       }
       
     }
-    buffy[m] = '\0';
+    buffy[n] = '\0';
 
     log_string("%s", buffy);
 
