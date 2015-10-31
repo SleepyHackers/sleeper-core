@@ -29,6 +29,8 @@
 #define WS_EXLEN   16
 #define WS_MASK    16
 
+#define WS_MASK_SIZE 4;
+
 const char   MODULE_NAME[]     = "websockets";
 const char   MODULE_DESC[]     = "Websocket handler";
 const char   MODULE_DEPENDS[]  = "";
@@ -48,6 +50,22 @@ typedef struct websocket_data {
   pthread_t thread;
 } WEBSOCKET_DATA;
 
+typedef struct websocket_frame {
+  bool fin;
+  bool rsv1;
+  bool rsv2;
+  bool rsv3;
+  int opcode;
+  bool masked;
+  int payload_len;
+  uint16_t payload_len16;
+  uint64_t payload_len64;
+  char mask[4];
+  char *payload;
+} WEBSOCKET_FRAME;
+
+
+
 // used by handleWebSocket. Replaces one char with another in the buf.
 // Returns how many replacements were made
 int replace_char(char *buf, char from, char to) {
@@ -61,15 +79,6 @@ int replace_char(char *buf, char from, char to) {
   return replacements;
 }
 
-
-
-void doTest(char *info) {
-  SOCKET_DATA *sock = NULL;
-  hookParseInfo(info, &socket);
-  //  char *cmd = listPop(sock->input);
-  int uid = socketGetUID(sock);
-  log_string("%d", uid);
-}
 
 WEBSOCKET_DATA *newWebSocket() {
   WEBSOCKET_DATA *wsock = calloc(1, sizeof(WEBSOCKET_DATA));
@@ -162,16 +171,9 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       sock->input_length = 0;
     }
   } else {
-        /* We are connected, check the input buffer for commands, */
-
-    char *buffy = (char*)malloc(sizeof(char)*sock->input_length*8);
+    /* We are connected, check the input buffer for commands, */
     int bit, count=0;
-    
-    
-    buffy[0] = '\0';
-    
-
-      /* Frame is as follows:
+    /* Frame is as follows:
       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
      +-+-+-+-+-------+-+-------------+-------------------------------+
      |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
@@ -193,33 +195,52 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 
     char mask[4];
     int m = 0, j = 0, n= 0;
-	  
-    for (c = 0; sock->input_buf[c] != '\0' ; c++) {
-      for (i = 7; i >= 0; --i) {
-	bit = (sock->input_buf[c] & (1 << i)) ? 1 : 0 ;
-	count++;
+    WEBSOCKET_FRAME *iframe = calloc(1, sizeof(WEBSOCKET_FRAME));;
 
-      }
-      if(c >= 2  && c <= 5) {
-	mask[m] =  sock->input_buf[c];
-	m++;
-      }
+    iframe->fin = !!(sock->input_buf[0] & 0x80);
+    iframe->rsv1 = !!(sock->input_buf[0] & (0x80<<WS_RSV1));
+    iframe->rsv2 = !!(sock->input_buf[0] & (0x80<<WS_RSV2));
+    iframe->rsv3 = !!(sock->input_buf[0] & (0x80<<WS_RSV3));
+    iframe->masked = !!(sock->input_buf[1] & 0x80);
+    iframe->opcode = (char)(sock->input_buf[0] & 0x0F);
 
-      if(c >= 6) {
-	j = n % 4;
-	buffy[n] = sock->input_buf[c] ^ mask[j];
-	n++;
+    iframe->payload_len = (char)(sock->input_buf[1] ^ 0x80);
+    if(iframe->fin == 0) return;        
+    log_string("op: %i", iframe->opcode);
 
-	
-	
-      }
-      
+    char *buffy = (char*)malloc(MAX_INPUT_LEN);
+    buffy[0] = '\0';
+
+    int mask_start = 2;
+
+    if( iframe->payload_len == 126 ) {
+      mask_start = 4;
+      iframe->payload_len16 = ntohs(sock->input_buf[2] | (uint16_t)(sock->input_buf[3]<<8));
+      log_string("%u", iframe->payload_len16);
     }
+
+    /* Untested */
+    if( iframe->payload_len == 127 ) {
+      mask_start = 8;
+      iframe->payload_len64 = ntohs(sock->input_buf[2] | (uint16_t)(sock->input_buf[3]<<8) | (uint16_t)(sock->input_buf[3]<<16) | (uint16_t)(sock->input_buf[3]<<24));
+    }
+    
+    int mask_end = mask_start + WS_MASK_SIZE;
+
+    if(iframe->masked == 1 && iframe->payload_len > 0) {
+      for (c = mask_start; sock->input_buf[c] != '\0' ; c++) {
+	if(c >= mask_start  && c < mask_end) {
+	  mask[m] =  sock->input_buf[c];
+	  m++;
+	} else if(c >= mask_end) {
+	  j = n % 4;
+	  buffy[n] = sock->input_buf[c] ^ mask[j];
+	  n++;
+	}
+      }
+    }
+
     buffy[n] = '\0';
-
-    log_string("%s", buffy);
-
-    log_string("%i", sock->input_length);
 
     if(strstr(buffy, "ping")) {
       bprintf(buf, "pong: %i\r\n", sock->uid);
@@ -227,7 +248,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       log_string("Got a ping from socket FD %i", sock->uid);
       char msg[8];
       memset(msg, 0, 8);
-      msg[0] = msg[0] | 1<<0;
+      msg[0] = msg[0] | 1;
       msg[0] = msg[0] | 1<<7;
       msg[1] = msg[1] | 1<<2;
       msg[2] = 'p';
@@ -242,6 +263,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
     sock->input_buf[0] = '\0';
     sock->input_length = 0;
     free(buffy);
+    free(iframe);
 
   }
   // clean up our mess
@@ -259,7 +281,7 @@ void websockets_loop(WEBSOCKET_DATA  *conn) {
     usleep(5000);
     //int in_len = recv (conn->uid, &conn->input_buf, MAX_INPUT_LEN, NULL);
     // get our sets all done up
-    
+    if(conn->die == 1) 	pthread_exit(0);
     ioctl(conn->uid, FIONREAD, &peek);
     if(peek > 0) {
       int in_len = read(conn->uid, conn->input_buf + conn->input_length,
@@ -268,6 +290,7 @@ void websockets_loop(WEBSOCKET_DATA  *conn) {
       if(in_len > 0) {
 	conn->input_length += in_len;
 	conn->input_buf[conn->input_length] = '\0';
+	handleWebSocket(conn);
       }
       else if(in_len <= 0) {
 	closeWebSocket(conn);
@@ -278,8 +301,9 @@ void websockets_loop(WEBSOCKET_DATA  *conn) {
       }
       
       
-      handleWebSocket(conn);
+
     }
+    
     
   }
 
