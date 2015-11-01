@@ -452,10 +452,6 @@ void destroy_websockets() {
   ITERATE_LIST(conn, conn_i) {
 
     listRemove(ws_descs, conn);
-    conn->die = 1;
-    
-    /* Wait for socket to die */
-    log_string("Killed socket %d", conn->uid);
 
     closeWebSocket(conn);
 
