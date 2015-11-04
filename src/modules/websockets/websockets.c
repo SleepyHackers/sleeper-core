@@ -18,6 +18,8 @@
 #include "websockets.h"
 
 #define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+
+/* Offsets */
 #define WS_FIN     0
 #define WS_RSV1    1
 #define WS_RSV2    2
@@ -27,6 +29,14 @@
 #define WS_LEN     9
 #define WS_EXLEN   16
 #define WS_MASK    16
+
+/* OP CODES */
+#define WSF_CONT   0
+#define WSF_TXT    1
+#define WSF_BIN    2
+#define WSF_CLOSE  8
+#define WSF_PING   9
+#define WSF_PONG   10
 
 #define WS_MASK_SIZE 4;
 
@@ -46,6 +56,7 @@ typedef struct websocket_data {
   int input_length;
   int connected;
   int die;
+  LIST *commands;
   LIST *frame_frags;
 } WEBSOCKET_DATA;
 
@@ -61,34 +72,46 @@ typedef struct websocket_frame {
   uint64_t payload_len64;
   char mask[4];
   char *payload;
+  LIST *parts;
 } WEBSOCKET_FRAME;
 
+typedef struct websocket_task {
+  int task;
+  char *paylaod;
+} WEBSOCKET_TASK;
 
-
-// used by handleWebSocket. Replaces one char with another in the buf.
-// Returns how many replacements were made
-int replace_char(char *buf, char from, char to) {
-  int replacements = 0;
-  for(;*buf != '\0'; buf++) {
-    if(*buf == from) {
-      *buf = to;
-      replacements++;
-    }
-  }
-  return replacements;
+void websocket_delete_frame(WEBSOCKET_FRAME *frame) {
+  WEBSOCKET_FRAME  *part = NULL;
+  
+  /* Clean up parts */
+  LIST_ITERATOR *parts = newListIterator(frame->parts);
+    ITERATE_LIST(part, parts) {
+      if(part != NULL) {
+	free(part);
+      }
+  } deleteListIterator(parts);
+    
+  free(frame);
 }
+
 
 
 WEBSOCKET_DATA *newWebSocket() {
   WEBSOCKET_DATA *wsock = calloc(1, sizeof(WEBSOCKET_DATA));
   wsock->die = 0;
   wsock->connected = 0;
+  wsock->commands   = newList();
+  wsock->frame_frags   = newList();
   return wsock;
 }
 
-
 void deleteWebSocket(WEBSOCKET_DATA *wsock) {
-
+  if(wsock->frame_frags != NULL) {
+    deleteListWith(wsock->frame_frags, websocket_delete_frame);
+  }
+  if(wsock->commands != NULL) {
+    deleteListWith(wsock->commands, free);
+  }
   free(wsock);
 }
 
@@ -119,15 +142,19 @@ void bufferASCIIHTML(BUFFER *buf) {
   bufferReplace(buf, "{D", "<font color=\"grey\">",    TRUE);
 }
 
-WEBSOCKET_FRAME *websocket_create_frame() {
+WEBSOCKET_FRAME *websocket_new_frame() {
   WEBSOCKET_FRAME *frame = calloc(1, sizeof(WEBSOCKET_FRAME));;
   frame->payload = (char*)malloc(MAX_INPUT_LEN);
+  frame->payload[0] = '\0';
+  frame->payload_len = 0;
+  frame->fin = 0;
+  frame->rsv1 = 0;
+  frame->rsv2 = 0;
+  frame->rsv3 = 0;
+  frame->masked = 0;
+  frame->opcode = 1;
+  frame->parts = newList();
   return frame;
-}
-
-void websocket_delete_frame(WEBSOCKET_FRAME *frame) {
-  free(frame->payload);;
-  free(frame);
 }
 
 int websocket_disconnect(WEBSOCKET_DATA *conn) {
@@ -144,6 +171,49 @@ int websocket_pong(WEBSOCKET_DATA *conn) {
 
 int websocket_bin_send(char *msg, WEBSOCKET_DATA *conn) {
 
+}
+
+int websocket_get_frame_bytes(WEBSOCKET_FRAME *frame) {
+
+
+}
+
+char *websocket_build_frame(WEBSOCKET_FRAME *frame) {
+  char binary[MAX_BUFFER];
+  memset(binary, 0, MAX_BUFFER);
+  if(frame->fin == 1) { binary[0] = binary[0] | 0x80; }
+  if(frame->rsv1 == 1) { binary[0] = binary[0] | 0x80>>WS_RSV1; }
+  if(frame->rsv2 == 1) { binary[0] = binary[0] | 0x80>>WS_RSV2; }
+  if(frame->rsv3 == 1) { binary[0] = binary[0] | 0x80>>WS_RSV3; }
+
+  binary[0] = binary[0] | 1;
+
+  /* Set Mask bit to false and size */
+  int size = strlen(frame->payload);
+  binary[1] = frame->payload_len;
+
+  
+  int i;
+  for(i = 0; i < MAX_BUFFER && i <=  frame->payload_len; ++i) {
+    binary[2+i] = (int)frame->payload[i];
+  }
+  binary[i+1] = '\0';
+  return binary;
+}
+
+int websocket_send_frame(WEBSOCKET_FRAME *frame, WEBSOCKET_DATA *sock) {
+  char *output = websocket_build_frame(frame);
+  /*
+  int i;
+  int c = 0;
+  for(c = 0; c <= MAX_BUFFER && output[c] != '\0'; ++c) {
+    for(i = 0; i <= 7; ++i) {
+      log_string("%2i: %u", c, !!(output[c] & (0x80>>i)));
+    }
+  }
+  */
+  send(sock->uid, output, strlen(output), 0);
+  return 0;
 }
 
 int websocket_frame(uint8_t type, char *msg) {
@@ -201,7 +271,7 @@ WEBSOCKET_FRAME *websocket_deframe(char *input) {
     int bit, count=0;
     int m = 0, j = 0, n= 0;
     int c, i;
-    WEBSOCKET_FRAME *frame = websocket_create_frame();
+    WEBSOCKET_FRAME *frame = websocket_new_frame();
 
     frame->fin = !!(input[0] & 0x80);
     frame->rsv1 = !!(input[0] & (0x80<<WS_RSV1));
@@ -330,7 +400,43 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
     /* Deframe the data */
     WEBSOCKET_FRAME *iframe = websocket_deframe(sock->input_buf);
 
-    log_string("%s", iframe->payload);
+    /* Invalid data, bailing! */
+    if(iframe == NULL) {
+      log_string("%s", "Failed to decoe frame");
+      return;
+    }
+
+     /* We got a dissconnect */
+    if(iframe->opcode == WSF_CLOSE) {
+      //      listPush(sock->commands, WSF_CLOSE));
+      WEBSOCKET_FRAME *oframe = websocket_new_frame();
+      	oframe->fin = 1;
+	oframe->opcode = WSF_CLOSE;
+	websocket_send_frame(oframe, sock);
+	websocket_delete_frame(oframe);
+	
+    }
+    
+    if(iframe->opcode == WSF_PING) {
+      //      listQueue(sock->commands, queueSocketCmd(WSF_PONG));
+    }
+
+
+    
+    if(iframe->opcode == WSF_TXT || iframe->opcode == WSF_BIN) {
+      /* Pass on payload to cmd list */
+        WEBSOCKET_FRAME *oframe = websocket_new_frame();
+	
+	oframe->payload = strdup("butt");
+	oframe->fin = 1;
+	oframe->opcode = 1;
+	oframe->payload_len = strlen(oframe->payload);
+	
+	websocket_send_frame(oframe, sock);
+	websocket_delete_frame(oframe);
+
+
+    }
 
     sock->input_buf[0] = '\0';
     sock->input_length = 0;
