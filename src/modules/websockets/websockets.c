@@ -17,76 +17,12 @@
 #include "wsutil.h"
 #include "websockets.h"
 
-#define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-
-/* Offsets */
-#define WS_FIN     0
-#define WS_RSV1    1
-#define WS_RSV2    2
-#define WS_RSV3    3
-#define WS_OPCODE  4
-#define WS_MASK    8
-#define WS_LEN     9
-#define WS_EXLEN   16
-#define WS_MASK    16
-
-/* OP CODES */
-#define WSF_CONT   0
-#define WSF_TXT    1
-#define WSF_BIN    2
-#define WSF_CLOSE  8
-#define WSF_PING   9
-#define WSF_PONG   10
-
-#define WS_MASK_SIZE 4
-
-#define WSF_MAX_LEN8 125
-#define WSF_LEN16 126
-#define WSF_MAX_LEN16 127
-
-#define WSF_MAX_LEN32 127
-
 const char   MODULE_NAME[]     = "websockets";
 const char   MODULE_DESC[]     = "Websocket handler";
 const char   MODULE_DEPENDS[]  = "";
 const double MODULE_VERSION    = 1.0;
 
-LIST *ws_descs = NULL;
 int ws_uid;
-
-// the datstructure for a web descriptor
-typedef struct websocket_data {
-  int uid;
-  struct sockaddr_in stAddr;
-  char input_buf[MAX_INPUT_LEN];
-  int input_length;
-  int connected;
-  int die;
-  CHAR_DATA *ch;
-  LIST *input;
-  LIST *output;
-  LIST *frame_frags;
-} WEBSOCKET_DATA;
-
-typedef struct websocket_frame {
-  bool fin;
-  bool rsv1;
-  bool rsv2;
-  bool rsv3;
-  int opcode;
-  bool masked;
-  int payload_len;
-  uint16_t payload_len16;
-  uint64_t payload_len64;
-  char mask[4];
-  char *payload;
-  int size;
-} WEBSOCKET_FRAME;
-
-typedef struct websocket_command {
-  int opcode;
-  char *payload;
-} WEBSOCKET_COMMAND;
 
 void websocket_delete_frame(WEBSOCKET_FRAME *frame) {
   WEBSOCKET_FRAME  *part = NULL;
@@ -131,7 +67,7 @@ void closeWebSocket(WEBSOCKET_DATA *wsock) {
 }
 
 void websocket_destroy(WEBSOCKET_DATA *conn) {
-  deleteChar(conn->ch);
+  /*  deleteChar(conn->ch); */
   listRemove(ws_descs, conn);
   log_string("WebSocket: Closking link, %i", conn->uid);
   closeWebSocket(conn);
@@ -399,27 +335,22 @@ void websocket_handle_input(WEBSOCKET_DATA *conn) {
     case WSF_CLOSE:
       listPush(conn->output, websocket_new_command(WSF_CLOSE, cmd->payload));
       close = 1;
+      listRemove(conn->input, cmd);
       break;
     case WSF_PING:
       listQueue(conn->output, websocket_new_command(WSF_PONG, cmd->payload));
-      break;
-    case WSF_TXT:
-    case WSF_BIN:
-      log_string("%s", cmd->payload);
-      LIST_ITERATOR *conn_i = newListIterator(ws_descs);
-      WEBSOCKET_DATA *test;
-      char *msg = (char*)malloc(sizeof(char)*MAX_BUFFER);
-      ITERATE_LIST(test, conn_i) {
-	sprintf(msg, "&lt;annon%i&gt; %s", conn->uid, cmd->payload);
-	listQueue(test->output, websocket_new_command(cmd->opcode, msg));
-      } deleteListIterator(conn_i);
-      free(msg);
+      listRemove(conn->input, cmd);
       break;
     }
-
-    listRemove(conn->input, cmd);
-
   } deleteListIterator(cmd_i);
+}
+
+void websocket_broadcast_txt(char *msg) {
+  LIST_ITERATOR *conn_i = newListIterator(ws_descs);
+  WEBSOCKET_DATA *test;
+  ITERATE_LIST(test, conn_i) {
+    listQueue(test->output, websocket_new_command(WSF_TXT, msg));
+  } deleteListIterator(conn_i);
 
 }
 
@@ -499,7 +430,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 
 	  /* Confirm websocket handshake was sent */
 	  sock->connected = 1;
-	  CHAR_DATA *ch = newChar();
+	  /*	  CHAR_DATA *ch = newChar();
 	  charSetName(ch, "Guest");
 
 	  	  
@@ -509,7 +440,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 	  charSetUID(ch, next_char_uid);
 
 	  char_exist(ch);
-	  sock->ch = ch;
+	  sock->ch = ch;*/
 	  break;
 	}
 	ch = strtok_r(NULL, "\n", &cSave);
@@ -544,7 +475,6 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
     }
 
     listQueue(sock->input, websocket_new_command(iframe->opcode, iframe->payload));
-    log_string("%i", iframe->payload_len);
 
     sock->input_buf[0] = '\0';
     sock->input_length = 0;
@@ -571,7 +501,6 @@ void websockets_loop(WEBSOCKET_DATA  *conn) {
     if(in_len > 0) {
       conn->input_length += in_len;
       conn->input_buf[conn->input_length] = '\0';
-      log_string("data: %i", conn->input_length);
 
       handleWebSocket(conn);
     } else if(in_len <= 0) {
