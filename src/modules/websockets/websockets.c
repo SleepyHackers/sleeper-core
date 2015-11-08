@@ -62,6 +62,7 @@ typedef struct websocket_data {
   int input_length;
   int connected;
   int die;
+  CHAR_DATA *ch;
   LIST *input;
   LIST *output;
   LIST *frame_frags;
@@ -130,6 +131,7 @@ void closeWebSocket(WEBSOCKET_DATA *wsock) {
 }
 
 void websocket_destroy(WEBSOCKET_DATA *conn) {
+  deleteChar(conn->ch);
   listRemove(ws_descs, conn);
   log_string("WebSocket: Closking link, %i", conn->uid);
   closeWebSocket(conn);
@@ -334,24 +336,27 @@ WEBSOCKET_FRAME *websocket_deframe(char *input) {
       mask_start = 4;
       frame->payload_len16 = ntohs(input[2] | (uint16_t)(input[3]<<8));
       log_string("%u", frame->payload_len16);
+      frame->payload_len = frame->payload_len16;
     }
 
     /* Untested */
     if( frame->payload_len == 127 ) {
       mask_start = 8;
       frame->payload_len64 = ntohs(input[2] | (uint16_t)(input[3]<<8) | (uint16_t)(input[3]<<16) | (uint16_t)(input[3]<<24));
+      frame->payload_len = frame->payload_len64;
     }
     
     int mask_end = mask_start + WS_MASK_SIZE;
 
     if(frame->masked == 1 && frame->payload_len > 0) {
-      for (c = mask_start; input[c] != '\0' ; c++) {
+      for (c = mask_start; c < MAX_INPUT_LEN && c <( frame->payload_len + WS_MASK_SIZE + mask_start); c++) {
 	if(c >= mask_start  && c < mask_end) {
 	  frame->mask[m] =  input[c];
 	  m++;
 	} else if(c >= mask_end) {
 	  j = n % 4;
 	  frame->payload[n] = input[c] ^ frame->mask[j];
+
 	  n++;
 	}
 
@@ -399,10 +404,16 @@ void websocket_handle_input(WEBSOCKET_DATA *conn) {
       listQueue(conn->output, websocket_new_command(WSF_PONG, cmd->payload));
       break;
     case WSF_TXT:
-      listQueue(conn->output, websocket_new_command(cmd->opcode, cmd->payload));
-      break;
     case WSF_BIN:
-      listQueue(conn->output, websocket_new_command(cmd->opcode, cmd->payload));
+      log_string("%s", cmd->payload);
+      LIST_ITERATOR *conn_i = newListIterator(ws_descs);
+      WEBSOCKET_DATA *test;
+      char *msg = (char*)malloc(sizeof(char)*MAX_BUFFER);
+      ITERATE_LIST(test, conn_i) {
+	sprintf(msg, "&lt;annon%i&gt; %s", conn->uid, cmd->payload);
+	listQueue(test->output, websocket_new_command(cmd->opcode, msg));
+      } deleteListIterator(conn_i);
+      free(msg);
       break;
     }
 
@@ -488,12 +499,23 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 
 	  /* Confirm websocket handshake was sent */
 	  sock->connected = 1;
+	  CHAR_DATA *ch = newChar();
+	  charSetName(ch, "Guest");
+
+	  	  
+	  // give the character a unique id
+	  int next_char_uid = mudsettingGetInt("puid") + 1;
+	  mudsettingSetInt("puid", next_char_uid);
+	  charSetUID(ch, next_char_uid);
+
+	  char_exist(ch);
+	  sock->ch = ch;
 	  break;
 	}
 	ch = strtok_r(NULL, "\n", &cSave);
       }
       
-      bprintf(buf, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\nUpgrade: websocket\r\nSec-WebSocket-Protocol: chat\r\n\r\n", dest);
+      bprintf(buf, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\nUpgrade: websocket\r\n\r\n", dest);
       
       // send out the buf contents
       send(sock->uid, bufferString(buf), strlen(bufferString(buf)), 0);
@@ -522,6 +544,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
     }
 
     listQueue(sock->input, websocket_new_command(iframe->opcode, iframe->payload));
+    log_string("%i", iframe->payload_len);
 
     sock->input_buf[0] = '\0';
     sock->input_length = 0;
@@ -548,6 +571,8 @@ void websockets_loop(WEBSOCKET_DATA  *conn) {
     if(in_len > 0) {
       conn->input_length += in_len;
       conn->input_buf[conn->input_length] = '\0';
+      log_string("data: %i", conn->input_length);
+
       handleWebSocket(conn);
     } else if(in_len <= 0) {
       websocket_destroy(conn);
@@ -591,7 +616,6 @@ void websockets_process(void *owner, void *data, char *arg) {
   } deleteListIterator(conn_i);
 
 }
-
 
 void init_websockets() {
   //  hookAdd("receive_connection", (void*)doTest);
