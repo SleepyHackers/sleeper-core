@@ -21,7 +21,7 @@ PROJECT := $(shell echo $(BINARY) | tr A-Z a-z)
 MODULE_DIR := modules
 
 # Directories of modules using the 2.0 system
-MODULES2 := dice party stats websockets webui_proto
+MODULES2 := dice party stats websockets webui_proto webui_mud
 
 # Path to python config utility
 PYTHON_CONFIG := python2.7-config

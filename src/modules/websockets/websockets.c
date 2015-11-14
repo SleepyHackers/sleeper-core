@@ -417,7 +417,7 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 	  cTok = strtok_r(NULL, ": ", &cSave);
 	  
 	  cTok[strlen(cTok)-1] = '\0';
-	  
+
 	  snprintf(b64in, MAX_BUFFER, "%s%s", cTok, GUID);
 	  size_t len = strlen(b64in);
 	  
@@ -445,7 +445,13 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
 	}
 	ch = strtok_r(NULL, "\n", &cSave);
       }
-      
+
+      if (sock->connected != 1) {
+	deleteBuffer(buf);
+	websocket_destroy(sock);
+	return;
+      }
+
       bprintf(buf, "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\nUpgrade: websocket\r\n\r\n", dest);
       
       // send out the buf contents
@@ -453,7 +459,6 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       sock->input_buf[0] = '\0';
       sock->input_length = 0;
       deleteBuffer(buf);
-
     }
   } else {
     /* We are connected, check the input buffer for commands, */
@@ -539,9 +544,9 @@ void websockets_process(void *owner, void *data, char *arg) {
 
   LIST_ITERATOR *conn_i = newListIterator(ws_descs);
   ITERATE_LIST(conn, conn_i) {
-      websockets_loop(conn);
       websocket_handle_input(conn);
       websocket_handle_output(conn);
+      websockets_loop(conn);
   } deleteListIterator(conn_i);
 
 }
