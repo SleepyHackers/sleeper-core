@@ -43,6 +43,8 @@ void websocket_broadcast_txt(char *msg);
 typedef struct websocket_data {
   int uid;
   struct sockaddr_in stAddr;
+  char *addr;
+  char *host;
   char input_buf[MAX_INPUT_LEN];
   int input_length;
   int connected;

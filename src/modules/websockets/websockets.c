@@ -1,4 +1,5 @@
 #include <sha.h>
+
 #include <http_parser.h>
 #include <string.h>
 #include <stdlib.h>
@@ -476,7 +477,9 @@ void handleWebSocket(WEBSOCKET_DATA *sock) {
       listQueue(sock->frame_frags, iframe);
       return;
     } else if (iframe->fin == 1 && !isListEmpty(sock->frame_frags)) {
-
+      /*        LIST_ITERATOR *frame_i = newListIterator(sock->frame_frags);
+	ITERATE_LIST(, frame_i) {
+	} deleteListIterator(frame_i);*/
     }
 
     listQueue(sock->input, websocket_new_command(iframe->opcode, iframe->payload));
@@ -532,11 +535,17 @@ void websockets_process(void *owner, void *data, char *arg) {
   // check for a new connection
   if(FD_ISSET(ws_uid, &read_fd)) {
     conn = newWebSocket();
-    unsigned int socksize;
+    unsigned int socksize = sizeof(conn->stAddr);
 
     // try to accept the connection
     if((conn->uid = accept(ws_uid, (struct sockaddr *)&conn->stAddr,
 			       &socksize)) > 0) {
+      int size = sizeof(conn->stAddr);
+      //      if (getpeername(conn->uid, (struct sockaddr *) &conn->stAddr, &size) == 0) {
+      char tmp[INET_ADDRSTRLEN];
+      inet_ntop(AF_INET, (struct sockaddr *) &conn->stAddr, tmp, INET_ADDRSTRLEN);
+      log_string("%s", tmp);
+	//      }
       listQueue(ws_descs, conn);
 
     }
@@ -549,6 +558,16 @@ void websockets_process(void *owner, void *data, char *arg) {
       websockets_loop(conn);
   } deleteListIterator(conn_i);
 
+}
+
+COMMAND(ws) {
+  LIST_ITERATOR *conn_i = newListIterator(ws_descs);
+  WEBSOCKET_DATA *conn;
+  ITERATE_LIST(conn, conn_i) {
+    char tmp[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &conn->stAddr, tmp, INET_ADDRSTRLEN);
+    log_string("%s", tmp);
+  } deleteListIterator(conn_i);
 }
 
 void init_websockets() {
@@ -584,6 +603,8 @@ void init_websockets() {
   ws_descs   = newList();
   //  query_table = newHashtable();
   start_update(0xA, 0.1 SECOND, websockets_process, NULL, NULL, NULL);
+
+  add_cmd("ws", NULL, ws, "admin", FALSE); 
 }
 
 void destroy_websockets() {
@@ -596,6 +617,7 @@ void destroy_websockets() {
     websocket_destroy(conn);
    } deleteListIterator(conn_i);
   interrupt_events_involving(0xA);
+  remove_cmd("ws");
 }
 
 bool onLoad() {
