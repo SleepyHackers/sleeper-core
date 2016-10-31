@@ -47,7 +47,7 @@ C_FLAGS := -Wall -g -ggdb -fPIC -I${INCLUDE_DIR} -O2 -pipe -march=native
 C_FLAGS := ${C_FLAGS} ${shell ${PYTHON_CONFIG} --cflags} -Wno-strict-prototypes -Wno-unused-value -Wno-unused-but-set-variable 
 
 # Libraries and link flags
-LIBS := -lz -lpthread -lcrypt -lhttp_parser -ldl -Wl,--export-dynamic
+LIBS := -lz -lpthread -lcrypt -lssl -lcrypto -lwebsockets -ldl -D THPOOL_DEBUG -pthread -Wl,--export-dynamic
 LIBS += ${shell ${PYTHON_CONFIG} --ldflags}
 
 # SleeperMUD core source files
@@ -67,7 +67,8 @@ SRC     := gameloop.c mud.c utils.c interpret.c handler.c inform.c      \
            pyroom.c pyexit.c pyaccount.c pysocket.c script_editor.c     \
 	   pyplugs.c pyevent.c pystorage.c pyauxiliary.c triggers.c     \
 	   trigedit.c trighooks.c pyolc.c set_val.c socials.c socedit.c \
-           time.c
+           time.c websocket.c lws-http.c thpool.c
+
 
 #Object files
 O_FILES := ${foreach src,${SRC},${OBJ_DIR}/${patsubst %.c,%.o,${src}}}
@@ -120,10 +121,3 @@ clean:
 	@rm -f ${OBJ_DIR}/*.o *.o ${DEPENDS_DIR}/*.d *~ */*~
 	@rm -f ../lib/pymodules/*~ ../lib/pymodules/*.pyc
 	@echo "$(PROJECT) source files cleaned"
-
-
-
-
-
-
-
