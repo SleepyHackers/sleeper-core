@@ -11,3 +11,6 @@ lib/
 log/
 \#*
 .\#*
+.copyover.dat
+src/sleeper
+					
