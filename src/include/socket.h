@@ -1,5 +1,7 @@
 #ifndef SOCKET_H
 #define SOCKET_H
+
+#define DFLT_TELNET_PORT 2069
 //*****************************************************************************
 // socket.h
 //

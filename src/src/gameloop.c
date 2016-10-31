@@ -25,7 +25,7 @@
 #include "races.h"
 #include "inform.h"
 #include "hooks.h"
-
+#include "websocket.h"
 
 //*****************************************************************************
 // mandatory modules
@@ -59,12 +59,13 @@
 #include "modules.h"
 
 // local procedures
-void game_loop    ( int control );
+void game_loop    ( int control, struct lws_context* wscontrol );
 bool gameloop_end = FALSE;
 
 // intialize shutdown state
 bool shut_down    = FALSE;
 int  control;
+struct lws_context *wscontrol;
 
 // what port are we running on?
 int mudport       = -1;
@@ -293,8 +294,6 @@ int main(int argc, char **argv)
   log_string("Force-resetting world");
   worldForceReset(gameworld);
 
-
-
   /**********************************************************************/
   /*                  HANDLE THE SOCKET STARTUP STUFF                   */
   /**********************************************************************/
@@ -314,6 +313,11 @@ int main(int argc, char **argv)
   if(fCopyOver)
     copyover_recover();
 
+  /**********************************************************************/
+  /*                  HANDLE THE WEBSOCKET STARTUP STUFF                */
+  /**********************************************************************/
+  log_string("Initializing websockets.");
+  wscontrol = init_websocket();
 
 
   /**********************************************************************/
@@ -321,7 +325,7 @@ int main(int argc, char **argv)
   /**********************************************************************/
   // main game loop
   log_string("Entering game loop");
-  game_loop(control);
+  game_loop(control, wscontrol);
 
   // run our finalize hooks
   hookRun("shutdown", "");
@@ -377,7 +381,7 @@ void update_handler()
 
 
 
-void game_loop(int control)   
+void game_loop(int control, struct lws_context* wscontrol)   
 {
   static struct timeval tv;
   struct timeval last_time, new_time;
